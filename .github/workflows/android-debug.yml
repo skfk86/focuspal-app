@@ -39,6 +39,9 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
+      - name: Generate app icons
+        run: npx @capacitor/assets generate --android --iconBackgroundColor '#0a0b0f' --iconBackgroundColorDark '#0a0b0f'
+
       - name: Apply native customizations
         run: python3 scripts/patch-android.py
 
