@@ -701,6 +701,57 @@
 
         .btn-add:active { transform: scale(0.93); }
 
+        #taskReminderToggle {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            font-size: 1rem;
+        }
+
+        #taskReminderToggle.active {
+            background: linear-gradient(135deg, var(--accent), var(--pink));
+            border-color: transparent;
+            color: white;
+        }
+
+        .task-reminder-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            border-radius: 14px;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+        }
+
+        .task-reminder-input {
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .task-reminder-hint {
+            font-size: 0.72rem;
+            color: var(--text2);
+        }
+
+        .task-time-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+            color: var(--accent2);
+            background: rgba(201,154,91,0.1);
+            padding: 2px 8px;
+            border-radius: 8px;
+            margin-right: 8px;
+            font-family: 'Space Mono', monospace;
+        }
+
         .item-list { display: flex; flex-direction: column; gap: 10px; }
 
         .item-card {
@@ -2730,7 +2781,15 @@
                 </div>
                 <div class="input-row">
                     <input type="text" class="form-input" id="taskInput" placeholder="أضف مهمة جديدة...">
+                    <button class="btn-icon" id="taskReminderToggle" onclick="toggleTaskReminderInput()" style="flex-shrink:0;">
+                        <i class="fas fa-bell"></i>
+                    </button>
                     <button class="btn-add" onclick="addTask()"><i class="fas fa-plus"></i></button>
+                </div>
+                <div class="task-reminder-row" id="taskReminderRow" style="display:none;">
+                    <i class="fas fa-bell" style="color:var(--accent2); font-size:0.8rem;"></i>
+                    <input type="time" class="task-reminder-input" id="taskReminderTime">
+                    <span class="task-reminder-hint">ذكّرني في هذا الوقت</span>
                 </div>
                 <div class="item-list" id="tasksList"></div>
             </div>
@@ -2925,6 +2984,15 @@
                                 <input type="checkbox" id="settingNotifications" checked>
                                 <div class="toggle-track"></div>
                             </label>
+                        </div>
+                        <div class="settings-row" style="cursor:pointer;" onclick="testNotification()">
+                            <div class="settings-row-left">
+                                <div class="settings-row-icon" style="background:rgba(111,162,135,0.15); color:var(--green);"><i class="fas fa-paper-plane"></i></div>
+                                <div class="settings-row-text">
+                                    <h4>اختبار الإشعار</h4>
+                                    <p>أرسل إشعار تجريبي الآن للتأكد إنه شغّال</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="settings-row" style="cursor:pointer;" onclick="openModal('alarmSoundModal')">
                             <div class="settings-row-left">
@@ -4285,12 +4353,52 @@ function sendNativeNotif(title, body) {
             notifications: [{
                 id: localNotifIdCounter++,
                 title, body,
-                schedule: { at: new Date(Date.now() + 100) },
-                sound: AppState.settings.completionSound ? 'beep.wav' : undefined
+                schedule: { at: new Date(Date.now() + 100) }
             }]
         }).catch(() => {});
     } else if ('Notification' in window && Notification.permission === 'granted') {
         new Notification(title, { body, icon: '' });
+    }
+}
+
+async function testNotification() {
+    if (isNativeApp() && window.Capacitor.Plugins.LocalNotifications) {
+        try {
+            const LN = window.Capacitor.Plugins.LocalNotifications;
+            let perm = await LN.checkPermissions();
+            if (perm.display !== 'granted') {
+                perm = await LN.requestPermissions();
+            }
+            if (perm.display !== 'granted') {
+                showNotif('⚠️ الإشعارات غير مفعّلة — فعّلها من إعدادات النظام للتطبيق', 'error');
+                return;
+            }
+            await LN.schedule({
+                notifications: [{
+                    id: 999999,
+                    title: 'FocusPal 🔔',
+                    body: 'الإشعارات شغّالة تمام! ✅',
+                    schedule: { at: new Date(Date.now() + 500) }
+                }]
+            });
+            showNotif('✅ اتبعت إشعار تجريبي — شوف شريط الإشعارات', 'success');
+        } catch (e) {
+            showNotif('⚠️ فشل الإشعار: ' + e.message, 'error');
+        }
+    } else if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+            new Notification('FocusPal 🔔', { body: 'الإشعارات شغّالة تمام! ✅' });
+            showNotif('✅ اتبعت إشعار تجريبي', 'success');
+        } else if (Notification.permission === 'denied') {
+            showNotif('⚠️ الإشعارات ممنوعة من إعدادات المتصفح', 'error');
+        } else {
+            Notification.requestPermission().then(p => {
+                if (p === 'granted') { new Notification('FocusPal 🔔', { body: 'الإشعارات شغّالة تمام! ✅' }); showNotif('✅ اتبعت إشعار تجريبي', 'success'); }
+                else showNotif('⚠️ تم رفض إذن الإشعارات', 'error');
+            });
+        }
+    } else {
+        showNotif('⚠️ الإشعارات غير مدعومة هنا', 'error');
     }
 }
 
@@ -4468,16 +4576,61 @@ function initPriority() {
     });
 }
 
+function taskNotifId(taskId) {
+    // Android notification IDs must fit in a 32-bit int; task.id is Date.now() (too big)
+    return Math.abs(taskId % 2000000000);
+}
+
+function toggleTaskReminderInput() {
+    const row = document.getElementById('taskReminderRow');
+    const btn = document.getElementById('taskReminderToggle');
+    const showing = row.style.display !== 'none';
+    row.style.display = showing ? 'none' : 'flex';
+    btn.classList.toggle('active', !showing);
+    if (showing) document.getElementById('taskReminderTime').value = '';
+}
+
+function scheduleTaskNotification(task) {
+    if (!task.reminderTime || !isNativeApp() || !window.Capacitor.Plugins.LocalNotifications) return;
+    const [h, m] = task.reminderTime.split(':').map(Number);
+    let target = new Date();
+    target.setHours(h, m, 0, 0);
+    if (target.getTime() <= Date.now()) target.setDate(target.getDate() + 1); // already passed today -> tomorrow
+    window.Capacitor.Plugins.LocalNotifications.schedule({
+        notifications: [{
+            id: taskNotifId(task.id),
+            title: '✅ تذكير بمهمة',
+            body: task.text,
+            schedule: { at: target }
+        }]
+    }).catch(() => {});
+}
+
+function cancelTaskNotification(task) {
+    if (!task.reminderTime || !isNativeApp() || !window.Capacitor.Plugins.LocalNotifications) return;
+    window.Capacitor.Plugins.LocalNotifications.cancel({ notifications: [{ id: taskNotifId(task.id) }] }).catch(() => {});
+}
+
 function addTask() {
     const input = document.getElementById('taskInput');
     const text = input.value.trim();
     if (!text) return;
+    const reminderTime = document.getElementById('taskReminderTime').value || null;
     const tasks = JSON.parse(localStorage.getItem('fp_tasks') || '[]');
-    tasks.push({ id: Date.now(), text, completed: false, priority: AppState.selectedPriority, createdAt: new Date().toISOString() });
+    const task = { id: Date.now(), text, completed: false, priority: AppState.selectedPriority, createdAt: new Date().toISOString(), reminderTime };
+    tasks.push(task);
     localStorage.setItem('fp_tasks', JSON.stringify(tasks));
     input.value = '';
+    document.getElementById('taskReminderTime').value = '';
+    document.getElementById('taskReminderRow').style.display = 'none';
+    document.getElementById('taskReminderToggle').classList.remove('active');
     renderTasks(); updateBadges(); updateQuickHints();
-    showNotif('✅ تم إضافة المهمة', 'success');
+    if (reminderTime) {
+        scheduleTaskNotification(task);
+        showNotif(`✅ تم إضافة المهمة — 🔔 تذكير الساعة ${reminderTime}`, 'success');
+    } else {
+        showNotif('✅ تم إضافة المهمة', 'success');
+    }
 }
 
 function renderTasks() {
@@ -4506,6 +4659,7 @@ function renderTasks() {
                 <div class="task-priority-dot ${t.priority||'medium'}"></div>
                 <div class="item-card-title" style="margin-right:0;">${esc(t.text)}</div>
             </div>
+            ${t.reminderTime ? `<span class="task-time-badge"><i class="fas fa-bell"></i>${t.reminderTime}</span>` : ''}
             <div class="item-actions">
                 <button class="btn-icon ${t.completed?'primary':'success'}" onclick="toggleTask(${t.id})">
                     <i class="fas fa-${t.completed?'undo':'check'}"></i>
@@ -4519,12 +4673,19 @@ function renderTasks() {
 function toggleTask(id) {
     let tasks = JSON.parse(localStorage.getItem('fp_tasks') || '[]');
     const t = tasks.find(x => x.id === id);
-    if (t) { t.completed = !t.completed; localStorage.setItem('fp_tasks', JSON.stringify(tasks)); renderTasks(); updateBadges(); showNotif(t.completed ? '✅ إنجاز!' : '🔄 إلغاء'); }
+    if (t) {
+        t.completed = !t.completed;
+        localStorage.setItem('fp_tasks', JSON.stringify(tasks));
+        if (t.completed) cancelTaskNotification(t); else scheduleTaskNotification(t);
+        renderTasks(); updateBadges(); showNotif(t.completed ? '✅ إنجاز!' : '🔄 إلغاء');
+    }
 }
 
 function deleteTask(id) {
     if (!confirm('حذف المهمة؟')) return;
     let tasks = JSON.parse(localStorage.getItem('fp_tasks') || '[]');
+    const t = tasks.find(x => x.id === id);
+    if (t) cancelTaskNotification(t);
     tasks = tasks.filter(t => t.id !== id);
     localStorage.setItem('fp_tasks', JSON.stringify(tasks));
     renderTasks(); updateBadges(); updateQuickHints();
@@ -4846,7 +5007,7 @@ function esc(text) {
 // ===============================
 // AI CHAT
 // ===============================
-const DEFAULT_GROQ_KEY = '';
+const DEFAULT_GROQ_KEY = ''; // ⚠️ set locally only — never commit a real key here (see README security note)
 const AI_SYSTEM_PROMPT = `أنت "مساعد FocusPal" — مدرب إنتاجية وعادات شخصي داخل تطبيق FocusPal. تتحدث بالعربية فقط، بأسلوب ودود، محفّز، عملي، وغير حكمي أبدًا.
 
 قدراتك:
