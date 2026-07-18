@@ -1,0 +1,31 @@
+name: Validate
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-js:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Extract and check JS syntax
+        run: |
+          node -e "
+            const fs = require('fs');
+            const html = fs.readFileSync('www/index.html', 'utf8');
+            const match = html.match(/<script>([\s\S]*)<\/script>/);
+            if (!match) { console.error('No <script> block found'); process.exit(1); }
+            fs.writeFileSync('_extracted.js', match[1]);
+          "
+          node --check _extracted.js
+          echo "JS syntax OK"

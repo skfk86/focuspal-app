@@ -1,0 +1,30 @@
+{
+  "appId": "com.focuspal.app",
+  "appName": "FocusPal Pro",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "allowNavigation": [
+      "api.groq.com",
+      "fonts.googleapis.com",
+      "fonts.gstatic.com",
+      "cdnjs.cloudflare.com"
+    ]
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_notify",
+      "iconColor": "#c99a5b",
+      "sound": "beep.wav"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 800,
+      "backgroundColor": "#0a0b0f",
+      "androidSplashResourceName": "splash"
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0a0b0f"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "focuspal-pro",
+  "version": "1.0.0",
+  "description": "FocusPal Pro — focus timer, tasks, and AI coach",
+  "scripts": {
+    "sync": "npx cap sync",
+    "android": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/local-notifications": "^8.0.0",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0",
+    "@capacitor/assets": "^3.0.5"
+  }
+}
