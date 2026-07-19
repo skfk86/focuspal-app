@@ -812,14 +812,14 @@
 
         .item-actions {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             justify-content: flex-end;
         }
 
         .btn-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 10px;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
             border: 1px solid var(--border);
             background: var(--surface2);
             color: var(--text2);
@@ -827,7 +827,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             transition: all 0.2s;
         }
 
@@ -1445,6 +1445,24 @@
             background: linear-gradient(135deg, var(--accent), var(--accent2));
             color: white;
             box-shadow: 0 8px 24px var(--glow);
+        }
+
+        .modal-btn.confirm.danger {
+            background: linear-gradient(135deg, var(--red), #8f3a33);
+            box-shadow: 0 8px 24px rgba(184,86,76,0.25);
+        }
+
+        .confirm-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            background: rgba(184,86,76,0.12);
+            color: var(--red);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            margin: 0 auto 12px;
         }
 
         /* Timer Presets */
@@ -3330,6 +3348,22 @@
 </div>
 
 <!-- ===== ADD NOTE MODAL ===== -->
+<!-- ===== CONFIRM MODAL ===== -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal-box" style="max-width:340px;">
+        <div class="modal-handle"></div>
+        <div class="modal-header" style="text-align:center;">
+            <div class="confirm-icon" id="confirmIcon"><i class="fas fa-trash"></i></div>
+            <div class="modal-title" id="confirmTitle">تأكيد الحذف</div>
+            <div class="modal-subtitle" id="confirmMessage">هل أنت متأكد؟</div>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-btn cancel" onclick="closeModal('confirmModal')">إلغاء</button>
+            <button class="modal-btn confirm danger" id="confirmActionBtn">تأكيد</button>
+        </div>
+    </div>
+</div>
+
 <div class="modal-overlay" id="addNoteModal">
     <div class="modal-box">
         <div class="modal-handle"></div>
@@ -3503,6 +3537,20 @@ document.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal-overlay')) {
         e.target.classList.remove('open');
     }
+});
+
+let _confirmCallback = null;
+
+function showConfirm(message, onConfirm, title = 'تأكيد الحذف') {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    _confirmCallback = onConfirm;
+    openModal('confirmModal');
+}
+
+document.getElementById('confirmActionBtn').addEventListener('click', () => {
+    closeModal('confirmModal');
+    if (_confirmCallback) { _confirmCallback(); _confirmCallback = null; }
 });
 
 // ===============================
@@ -4509,12 +4557,13 @@ function saveNote() {
 }
 
 function deleteNote(id) {
-    if (!confirm('حذف الملاحظة؟')) return;
-    let notes = JSON.parse(localStorage.getItem('fp_notes') || '[]');
-    notes = notes.filter(n => n.id !== id);
-    localStorage.setItem('fp_notes', JSON.stringify(notes));
-    renderNotes(); updateBadges();
-    showNotif('🗑️ تم الحذف');
+    showConfirm('هل تريد حذف هذه الملاحظة نهائيًا؟', () => {
+        let notes = JSON.parse(localStorage.getItem('fp_notes') || '[]');
+        notes = notes.filter(n => n.id !== id);
+        localStorage.setItem('fp_notes', JSON.stringify(notes));
+        renderNotes(); updateBadges();
+        showNotif('🗑️ تم الحذف');
+    }, 'حذف الملاحظة');
 }
 
 function renderNotes(search = '') {
@@ -4614,7 +4663,7 @@ function cancelTaskNotification(task) {
 function addTask() {
     const input = document.getElementById('taskInput');
     const text = input.value.trim();
-    if (!text) return;
+    if (!text) { showNotif('⚠️ اكتب المهمة أولاً'); input.focus(); return; }
     const reminderTime = document.getElementById('taskReminderTime').value || null;
     const tasks = JSON.parse(localStorage.getItem('fp_tasks') || '[]');
     const task = { id: Date.now(), text, completed: false, priority: AppState.selectedPriority, createdAt: new Date().toISOString(), reminderTime };
@@ -4682,14 +4731,15 @@ function toggleTask(id) {
 }
 
 function deleteTask(id) {
-    if (!confirm('حذف المهمة؟')) return;
-    let tasks = JSON.parse(localStorage.getItem('fp_tasks') || '[]');
-    const t = tasks.find(x => x.id === id);
-    if (t) cancelTaskNotification(t);
-    tasks = tasks.filter(t => t.id !== id);
-    localStorage.setItem('fp_tasks', JSON.stringify(tasks));
-    renderTasks(); updateBadges(); updateQuickHints();
-    showNotif('🗑️ تم الحذف');
+    showConfirm('هل تريد حذف هذه المهمة نهائيًا؟', () => {
+        let tasks = JSON.parse(localStorage.getItem('fp_tasks') || '[]');
+        const t = tasks.find(x => x.id === id);
+        if (t) cancelTaskNotification(t);
+        tasks = tasks.filter(t => t.id !== id);
+        localStorage.setItem('fp_tasks', JSON.stringify(tasks));
+        renderTasks(); updateBadges(); updateQuickHints();
+        showNotif('🗑️ تم الحذف');
+    }, 'حذف المهمة');
 }
 
 // ===============================
@@ -4956,8 +5006,9 @@ function initSettingsListeners() {
 }
 
 function resetAllData() {
-    if (!confirm('مسح كل البيانات؟ لا يمكن التراجع.')) return;
-    localStorage.clear(); location.reload();
+    showConfirm('سيتم مسح كل مهامك، ملاحظاتك، وإحصائياتك نهائيًا. هذا الإجراء لا يمكن التراجع عنه.', () => {
+        localStorage.clear(); location.reload();
+    }, 'مسح كل البيانات؟');
 }
 
 function exportData() {
