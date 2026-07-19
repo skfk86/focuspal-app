@@ -2578,9 +2578,140 @@
             font-size: 0.68rem;
             font-weight: 700;
         }
+        /* ============ Animated Splash Screen ============ */
+        #appSplash {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: radial-gradient(ellipse 70% 50% at 50% 40%, rgba(201,154,91,0.1) 0%, transparent 65%), #0a0b0f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        #appSplash.splash-hide {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .splash-ticks {
+            position: absolute;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: repeating-conic-gradient(rgba(201,154,91,0.35) 0deg 0.6deg, transparent 0.6deg 9deg);
+            -webkit-mask: radial-gradient(circle, transparent 62%, #000 63%, #000 66%, transparent 67%);
+            mask: radial-gradient(circle, transparent 62%, #000 63%, #000 66%, transparent 67%);
+            animation: splashRotate 18s linear infinite;
+        }
+
+        @keyframes splashRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .splash-glow {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(201,154,91,0.35) 0%, transparent 70%);
+            animation: splashPulse 2.4s ease-in-out infinite;
+        }
+
+        @keyframes splashPulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.3); opacity: 1; }
+        }
+
+        .splash-logo-icon {
+            position: relative;
+            width: 88px;
+            height: 88px;
+            border-radius: 26px 26px 26px 8px;
+            background: linear-gradient(150deg, var(--accent), var(--pink));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.3rem;
+            color: white;
+            box-shadow: 0 0 50px rgba(201,154,91,0.35);
+            opacity: 0;
+            transform: scale(0.6);
+            animation: splashIconIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s forwards;
+        }
+
+        @keyframes splashIconIn {
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .splash-logo-text {
+            position: relative;
+            margin-top: 22px;
+            font-family: 'Almarai', 'Cairo', sans-serif;
+            font-size: 1.9rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent2), var(--pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: splashFadeUp 0.6s ease 0.5s forwards;
+        }
+
+        .splash-tagline {
+            position: relative;
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: var(--text2);
+            opacity: 0;
+            transform: translateY(8px);
+            animation: splashFadeUp 0.6s ease 0.75s forwards;
+        }
+
+        @keyframes splashFadeUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .splash-loader {
+            position: absolute;
+            bottom: 14%;
+            width: 120px;
+            height: 3px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.08);
+            overflow: hidden;
+            opacity: 0;
+            animation: splashFadeUp 0.5s ease 1s forwards;
+        }
+
+        .splash-loader-fill {
+            width: 40%;
+            height: 100%;
+            border-radius: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--pink));
+            animation: splashLoaderSlide 1.1s ease-in-out infinite;
+        }
+
+        @keyframes splashLoaderSlide {
+            0% { transform: translateX(-120%); }
+            100% { transform: translateX(280%); }
+        }
     </style>
 </head>
 <body>
+<div id="appSplash">
+    <div class="splash-ticks"></div>
+    <div class="splash-glow"></div>
+    <div class="splash-logo-icon">🧠</div>
+    <div class="splash-logo-text">FocusPal</div>
+    <div class="splash-tagline">صفّي ذهنك، أنجز أكثر</div>
+    <div class="splash-loader"><div class="splash-loader-fill"></div></div>
+</div>
 <div class="app">
     <!-- Top glow bar -->
     <div class="focus-glow" id="focusGlow"></div>
@@ -3011,6 +3142,16 @@
                                     <p>أرسل إشعار تجريبي الآن للتأكد إنه شغّال</p>
                                 </div>
                             </div>
+                        </div>
+                        <div class="settings-row" id="exactAlarmRow" style="display:none; cursor:pointer;" onclick="openExactAlarmSettings()">
+                            <div class="settings-row-left">
+                                <div class="settings-row-icon" style="background:rgba(184,86,76,0.15); color:var(--red);"><i class="fas fa-clock"></i></div>
+                                <div class="settings-row-text">
+                                    <h4>فعّل التنبيهات الدقيقة</h4>
+                                    <p>مطلوب عشان تذكيرات المهام توصل بالظبط في وقتها</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-left" style="color:var(--text2); font-size:0.8rem;"></i>
                         </div>
                         <div class="settings-row" style="cursor:pointer;" onclick="openModal('alarmSoundModal')">
                             <div class="settings-row-left">
@@ -3453,6 +3594,12 @@ const AppState = {
 // INIT
 // ===============================
 document.addEventListener('DOMContentLoaded', () => {
+    // Our HTML splash is already painted at this point, so it's safe to hide
+    // the native splash now — the handoff is invisible to the user.
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SplashScreen) {
+        window.Capacitor.Plugins.SplashScreen.hide().catch(() => {});
+    }
+
     loadSettings();
     initThemeToggle();
     initNav();
@@ -3475,6 +3622,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initNotesSearch();
     updateAccountUI();
     updateSubscriptionRowUI();
+
+    setTimeout(() => {
+        const splash = document.getElementById('appSplash');
+        if (!splash) return;
+        splash.classList.add('splash-hide');
+        setTimeout(() => splash.remove(), 650);
+    }, 1900);
 });
 
 // ===============================
@@ -4384,10 +4538,42 @@ function isNativeApp() {
 
 function initNotifications() {
     if (isNativeApp() && window.Capacitor.Plugins.LocalNotifications) {
-        window.Capacitor.Plugins.LocalNotifications.requestPermissions().catch(() => {});
+        const LN = window.Capacitor.Plugins.LocalNotifications;
+        LN.requestPermissions().catch(() => {});
+        LN.createChannel({
+            id: 'focuspal_default',
+            name: 'تذكيرات FocusPal',
+            importance: 5,
+            visibility: 1,
+            vibration: true
+        }).catch(() => {});
+        checkExactAlarmStatus();
     } else if ('Notification' in window && Notification.permission === 'default') {
         setTimeout(() => Notification.requestPermission(), 3000);
     }
+}
+
+async function checkExactAlarmStatus() {
+    if (!isNativeApp() || !window.Capacitor.Plugins.LocalNotifications || !window.Capacitor.Plugins.LocalNotifications.checkExactNotificationSetting) return;
+    try {
+        const res = await window.Capacitor.Plugins.LocalNotifications.checkExactNotificationSetting();
+        AppState.exactAlarmGranted = res.exact_alarm === 'granted';
+        updateExactAlarmUI();
+    } catch (e) {}
+}
+
+function updateExactAlarmUI() {
+    const row = document.getElementById('exactAlarmRow');
+    if (!row) return;
+    row.style.display = AppState.exactAlarmGranted === false ? 'flex' : 'none';
+}
+
+async function openExactAlarmSettings() {
+    if (!isNativeApp() || !window.Capacitor.Plugins.LocalNotifications || !window.Capacitor.Plugins.LocalNotifications.changeExactNotificationSetting) return;
+    const res = await window.Capacitor.Plugins.LocalNotifications.changeExactNotificationSetting();
+    AppState.exactAlarmGranted = res.exact_alarm === 'granted';
+    updateExactAlarmUI();
+    if (AppState.exactAlarmGranted) showNotif('✅ تم تفعيل التنبيهات الدقيقة — التذكيرات هتوصل في وقتها بالظبط', 'success');
 }
 
 let localNotifIdCounter = 1;
@@ -4401,7 +4587,8 @@ function sendNativeNotif(title, body) {
             notifications: [{
                 id: localNotifIdCounter++,
                 title, body,
-                schedule: { at: new Date(Date.now() + 100) }
+                channelId: 'focuspal_default',
+                schedule: { at: new Date(Date.now() + 100), allowWhileIdle: true }
             }]
         }).catch(() => {});
     } else if ('Notification' in window && Notification.permission === 'granted') {
@@ -4426,7 +4613,8 @@ async function testNotification() {
                     id: 999999,
                     title: 'FocusPal 🔔',
                     body: 'الإشعارات شغّالة تمام! ✅',
-                    schedule: { at: new Date(Date.now() + 500) }
+                    channelId: 'focuspal_default',
+                    schedule: { at: new Date(Date.now() + 500), allowWhileIdle: true }
                 }]
             });
             showNotif('✅ اتبعت إشعار تجريبي — شوف شريط الإشعارات', 'success');
@@ -4650,7 +4838,8 @@ function scheduleTaskNotification(task) {
             id: taskNotifId(task.id),
             title: '✅ تذكير بمهمة',
             body: task.text,
-            schedule: { at: target }
+            channelId: 'focuspal_default',
+            schedule: { at: target, allowWhileIdle: true }
         }]
     }).catch(() => {});
 }

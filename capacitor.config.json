@@ -12,11 +12,15 @@
     ]
   },
   "plugins": {
-    "LocalNotifications": {},
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_notify",
+      "iconColor": "#c99a5b"
+    },
     "SplashScreen": {
-      "launchShowDuration": 800,
+      "launchAutoHide": false,
       "backgroundColor": "#0a0b0f",
-      "androidSplashResourceName": "splash"
+      "androidSplashResourceName": "splash",
+      "showSpinner": false
     },
     "StatusBar": {
       "style": "DARK",
