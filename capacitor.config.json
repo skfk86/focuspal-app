@@ -1,6 +1,6 @@
 {
-  "appId": "com.focuspal.app",
-  "appName": "FocusPal Pro",
+  "appId": "com.kairosapp.focus",
+  "appName": "Kairos",
   "webDir": "www",
   "server": {
     "androidScheme": "https",

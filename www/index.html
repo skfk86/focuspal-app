@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0a0b0f">
-    <title>FocusPal Pro</title>
+    <title>Kairos</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=Almarai:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -2708,7 +2708,7 @@
     <div class="splash-ticks"></div>
     <div class="splash-glow"></div>
     <div class="splash-logo-icon">🧠</div>
-    <div class="splash-logo-text">FocusPal</div>
+    <div class="splash-logo-text">Kairos</div>
     <div class="splash-tagline">صفّي ذهنك، أنجز أكثر</div>
     <div class="splash-loader"><div class="splash-loader-fill"></div></div>
 </div>
@@ -2720,7 +2720,7 @@
     <div class="header">
         <div class="header-logo">
             <div class="logo-icon">🧠</div>
-            <span class="logo-text">FocusPal</span>
+            <span class="logo-text">Kairos</span>
         </div>
         <div class="header-stats">
             <div class="header-pill music" id="headerMusic">
@@ -3016,7 +3016,7 @@
                 <!-- Messages -->
                 <div class="chat-messages" id="chatMessages">
                     <div class="chat-bubble ai">
-                        <div class="bubble-label"><i class="fas fa-robot"></i> مساعد FocusPal</div>
+                        <div class="bubble-label"><i class="fas fa-robot"></i> مساعد Kairos</div>
                         <div class="ai-content" id="welcomeMsg"></div>
                     </div>
                 </div>
@@ -3217,7 +3217,7 @@
                             <div class="settings-row-left">
                                 <div class="settings-row-icon" style="background:rgba(201,154,91,0.15); color:var(--accent2);"><i class="fas fa-robot"></i></div>
                                 <div class="settings-row-text">
-                                    <h4>مساعد FocusPal</h4>
+                                    <h4>مساعد Kairos</h4>
                                     <p id="aiKeySettingLabel">يعمل بالمفتاح المشترك — 5 رسائل يوميًا</p>
                                 </div>
                             </div>
@@ -3235,7 +3235,7 @@
                     </div>
                 </div>
 
-                <div class="app-version">FocusPal Pro v4.0 ✦</div>
+                <div class="app-version">Kairos v4.0 ✦</div>
             </div>
         </div>
     </div>
@@ -3459,7 +3459,7 @@
         <div class="modal-handle"></div>
         <div class="modal-header">
             <div class="modal-title"><i class="fas fa-crown" style="margin-left:6px; color:var(--accent2);"></i>الاشتراك المميز</div>
-            <div class="modal-subtitle">افتح كامل إمكانيات FocusPal</div>
+            <div class="modal-subtitle">افتح كامل إمكانيات Kairos</div>
         </div>
         <div class="modal-body">
             <div class="plan-toggle">
@@ -3868,7 +3868,7 @@ function completeSession() {
     // Show alarm banner and play persistent alarm
     if (AppState.settings.sound) startAlarm();
 
-    sendNativeNotif('FocusPal 🎉', `أكملت جلسة ${AppState.settings.focusDuration} دقيقة! استرح قليلاً.`);
+    sendNativeNotif('Kairos 🎉', `أكملت جلسة ${AppState.settings.focusDuration} دقيقة! استرح قليلاً.`);
 
     document.getElementById('startBtn').innerHTML = '<i class="fas fa-play"></i>';
     document.getElementById('focusGlow').classList.remove('running');
@@ -3890,7 +3890,7 @@ function updateTimerDisplay() {
     const m = Math.floor(AppState.timeLeft / 60).toString().padStart(2, '0');
     const s = (AppState.timeLeft % 60).toString().padStart(2, '0');
     document.getElementById('timerDisplay').textContent = `${m}:${s}`;
-    document.title = AppState.isRunning ? `(${m}:${s}) FocusPal` : 'FocusPal';
+    document.title = AppState.isRunning ? `(${m}:${s}) Kairos` : 'Kairos';
 
     const circumference = 2 * Math.PI * 95;
     const progress = AppState.totalTime > 0 ? AppState.timeLeft / AppState.totalTime : 1;
@@ -4542,7 +4542,7 @@ function initNotifications() {
         LN.requestPermissions().catch(() => {});
         LN.createChannel({
             id: 'focuspal_default',
-            name: 'تذكيرات FocusPal',
+            name: 'تذكيرات Kairos',
             importance: 5,
             visibility: 1,
             vibration: true
@@ -4611,7 +4611,7 @@ async function testNotification() {
             await LN.schedule({
                 notifications: [{
                     id: 999999,
-                    title: 'FocusPal 🔔',
+                    title: 'Kairos 🔔',
                     body: 'الإشعارات شغّالة تمام! ✅',
                     channelId: 'focuspal_default',
                     schedule: { at: new Date(Date.now() + 500), allowWhileIdle: true }
@@ -4623,13 +4623,13 @@ async function testNotification() {
         }
     } else if ('Notification' in window) {
         if (Notification.permission === 'granted') {
-            new Notification('FocusPal 🔔', { body: 'الإشعارات شغّالة تمام! ✅' });
+            new Notification('Kairos 🔔', { body: 'الإشعارات شغّالة تمام! ✅' });
             showNotif('✅ اتبعت إشعار تجريبي', 'success');
         } else if (Notification.permission === 'denied') {
             showNotif('⚠️ الإشعارات ممنوعة من إعدادات المتصفح', 'error');
         } else {
             Notification.requestPermission().then(p => {
-                if (p === 'granted') { new Notification('FocusPal 🔔', { body: 'الإشعارات شغّالة تمام! ✅' }); showNotif('✅ اتبعت إشعار تجريبي', 'success'); }
+                if (p === 'granted') { new Notification('Kairos 🔔', { body: 'الإشعارات شغّالة تمام! ✅' }); showNotif('✅ اتبعت إشعار تجريبي', 'success'); }
                 else showNotif('⚠️ تم رفض إذن الإشعارات', 'error');
             });
         }
@@ -5248,7 +5248,7 @@ function esc(text) {
 // AI CHAT
 // ===============================
 const DEFAULT_GROQ_KEY = ''; // ⚠️ set locally only — never commit a real key here (see README security note)
-const AI_SYSTEM_PROMPT = `أنت "مساعد FocusPal" — مدرب إنتاجية وعادات شخصي داخل تطبيق FocusPal. تتحدث بالعربية فقط، بأسلوب ودود، محفّز، عملي، وغير حكمي أبدًا.
+const AI_SYSTEM_PROMPT = `أنت "مساعد Kairos" — مدرب إنتاجية وعادات شخصي داخل تطبيق Kairos. تتحدث بالعربية فقط، بأسلوب ودود، محفّز، عملي، وغير حكمي أبدًا.
 
 قدراتك:
 - تحليل إنتاجية المستخدم ومراجعة إحصائياته بناءً على البيانات المرسلة لك.
@@ -5688,7 +5688,7 @@ function appendAIBubble(text) {
         cleanText = text.replace(taskMatch[0], '').trim();
     }
 
-    let html = `<div class="bubble-label"><i class="fas fa-robot"></i> مساعد FocusPal</div><div class="ai-content">${formatAIMarkdown(cleanText)}</div>`;
+    let html = `<div class="bubble-label"><i class="fas fa-robot"></i> مساعد Kairos</div><div class="ai-content">${formatAIMarkdown(cleanText)}</div>`;
 
     if (tasks.length) {
         const blockId = 'aitasks-' + Date.now();

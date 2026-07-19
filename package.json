@@ -1,7 +1,7 @@
 {
-  "name": "focuspal-pro",
+  "name": "kairos",
   "version": "1.0.0",
-  "description": "FocusPal Pro — focus timer, tasks, and AI coach",
+  "description": "Kairos — focus timer, tasks, and AI coach",
   "scripts": {
     "sync": "npx cap sync",
     "android": "npx cap open android"
