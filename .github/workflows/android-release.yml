@@ -1,7 +1,5 @@
 name: Android Release Build
 
-# Triggered by pushing a version tag, e.g.:
-#   git tag v1.0.0 && git push origin v1.0.0
 on:
   push:
     tags:
@@ -29,26 +27,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # ── Inject secrets into index.html ──────────────────────────────────────
       - name: Inject Groq API key
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           sed -i "s/const DEFAULT_GROQ_KEY = '';/const DEFAULT_GROQ_KEY = '${GROQ_API_KEY}';/" www/index.html
 
-      - name: Inject AdMob IDs
-        env:
-          ADMOB_APP_ID:          ${{ secrets.ADMOB_APP_ID }}
-          ADMOB_INTERSTITIAL_ID: ${{ secrets.ADMOB_INTERSTITIAL_ID }}
-          ADMOB_REWARDED_ID:     ${{ secrets.ADMOB_REWARDED_ID }}
-        run: |
-          # Replace the three placeholder strings written in index.html
-          sed -i "s|ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY|${ADMOB_APP_ID}|g"          www/index.html
-          sed -i "s|ca-app-pub-XXXXXXXXXXXXXXXX/ZZZZZZZZZZ|${ADMOB_INTERSTITIAL_ID}|g" www/index.html
-          sed -i "s|ca-app-pub-XXXXXXXXXXXXXXXX/WWWWWWWWWW|${ADMOB_REWARDED_ID}|g"     www/index.html
-
-      # ── Generate native Android project ─────────────────────────────────────
-      # No android/ folder is committed — we generate it fresh every run.
       - name: Add Android platform
         run: npx cap add android
 
@@ -57,13 +41,12 @@ jobs:
 
       - name: Apply native customizations (manifest + AdMob + signing config)
         env:
-          ADMOB_APP_ID: ${{ secrets.ADMOB_APP_ID }}
+          ADMOB_APP_ID: ca-app-pub-7608701150166997~5972531267
         run: python3 scripts/patch-android.py --signing
 
       - name: Sync Capacitor (web assets → native project)
         run: npx cap sync android
 
-      # ── Build ────────────────────────────────────────────────────────────────
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
@@ -95,7 +78,6 @@ jobs:
         if: always()
         run: rm -f android/app/release.keystore
 
-      # ── Publish ──────────────────────────────────────────────────────────────
       - name: Upload release artifacts
         uses: actions/upload-artifact@v4
         with:

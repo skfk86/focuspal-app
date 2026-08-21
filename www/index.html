@@ -5159,20 +5159,20 @@ let chatHistory = [];
 let chatLoading = false;
 // ===== AdMob Credits System =====
 // User has 0 credits by default.
-// Watch rewarded ad → earn 3 credits. No auto-reset.
+// Watch rewarded interstitial ad → earn 3 credits. No auto-reset.
 // Interstitial shown up to 2× per day.
 
 const AD_CREDITS_PER_AD    = 3;   // طلبات تُمنح عند مشاهدة إعلان بمكافأة
 const INTERSTITIAL_MAX_DAY = 2;   // أقصى عدد إعلانات بينية يوميًا
 
 // --- AdMob Unit IDs (استبدل بمعرفاتك الحقيقية من Google AdMob) ---
-const ADMOB_APP_ID          = 'ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY';
-const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-XXXXXXXXXXXXXXXX/ZZZZZZZZZZ';
-const ADMOB_REWARDED_ID     = 'ca-app-pub-XXXXXXXXXXXXXXXX/WWWWWWWWWW';
+const ADMOB_APP_ID          = 'ca-app-pub-7608701150166997~5972531267';
+const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-7608701150166997/2397628230';
+const ADMOB_REWARDED_INTER_ID = 'ca-app-pub-7608701150166997/4979454344';
 
 // Test IDs (uncomment during development):
 // const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-3940256099942544/1033173712';
-// const ADMOB_REWARDED_ID     = 'ca-app-pub-3940256099942544/5224354917';
+// const ADMOB_REWARDED_INTER_ID = 'ca-app-pub-3940256099942544/5224354917'; // rewarded interstitial test ID
 
 let admobReady = false;
 
@@ -5256,8 +5256,8 @@ async function showRewardedAd() {
             return;
         }
         const { AdMob } = await import('@capacitor-community/admob');
-        await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED_ID });
-        const result = await AdMob.showRewardVideoAd();
+        await AdMob.prepareRewardedInterstitialAd({ adId: ADMOB_REWARDED_INTER_ID });
+        const result = await AdMob.showRewardedInterstitialAd();
         if (result && result.type === 'rewarded') {
             setAICredits(getAICredits() + AD_CREDITS_PER_AD);
             showNotif(`🎉 حصلت على ${AD_CREDITS_PER_AD} طلبات ذكاء اصطناعي!`, 'success');
@@ -5360,7 +5360,7 @@ function updateAccountUI() {
 }
 
 // ===== Subscription system removed — replaced by AdMob rewarded ads =====
-// (see showRewardedAd / initAdMob above)
+// (see showRewardedAd / initAdMob above — uses Rewarded Interstitial, not Rewarded Video)
 
 function initEnterKeys() {
     const taskInput = document.getElementById('taskInput');
