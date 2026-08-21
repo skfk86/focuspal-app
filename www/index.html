@@ -5178,14 +5178,21 @@ let admobReady = false;
 
 async function initAdMob() {
     try {
-        const { AdMob } = await import('@capacitor-community/admob');
-        await AdMob.initialize({ requestTrackingAuthorization: false });
+        // In Capacitor vanilla-JS apps (no bundler) plugins are NOT importable
+        // as ES modules — they register on the native bridge and are exposed via
+        // window.Capacitor.Plugins.  Dynamic import('@capacitor-community/admob')
+        // fails at runtime because node_modules/ is absent in the webview assets.
+        if (!isNativeApp()) return; // AdMob is Android-only
+        const AdMob = window.Capacitor?.Plugins?.AdMob;
+        if (!AdMob) throw new Error('AdMob bridge not registered');
+
+        await AdMob.initialize({ requestTrackingAuthorization: false, initializeForTesting: false });
         admobReady = true;
 
-        // Load interstitial eagerly
+        // Pre-load interstitial eagerly so it's ready instantly
         await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL_ID });
 
-        // Show interstitial up to 2× today on launch
+        // Show interstitial up to 2x per calendar day
         const todayKey = getTodayKey();
         const iData = JSON.parse(localStorage.getItem('fp_interstitial') || '{}');
         const todayCount = (iData.date === todayKey) ? (iData.count || 0) : 0;
@@ -5195,7 +5202,7 @@ async function initAdMob() {
                 date: todayKey,
                 count: todayCount + 1
             }));
-            // Reload for next time
+            // Pre-load again for next session today
             await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL_ID });
         }
     } catch (e) {
@@ -5250,12 +5257,13 @@ async function showRewardedAd() {
 
     try {
         if (!admobReady) {
-            // Fallback for web/debug: grant credits directly
-            setAICredits(getAICredits() + AD_CREDITS_PER_AD);
-            showNotif(`🎉 حصلت على ${AD_CREDITS_PER_AD} طلبات!`, 'success');
+            // No AdMob in web preview: deny credits (consistent with production policy)
+            showNotif('⚠️ الإعلانات متاحة فقط في تطبيق Android.', 'error');
             return;
         }
-        const { AdMob } = await import('@capacitor-community/admob');
+        // Use the native bridge — same pattern as initAdMob (no dynamic import)
+        const AdMob = window.Capacitor?.Plugins?.AdMob;
+        if (!AdMob) throw new Error('AdMob bridge not registered');
         await AdMob.prepareRewardedInterstitialAd({ adId: ADMOB_REWARDED_INTER_ID });
         const result = await AdMob.showRewardedInterstitialAd();
         if (result && result.type === 'rewarded') {
