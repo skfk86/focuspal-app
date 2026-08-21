@@ -3510,7 +3510,7 @@ document.addEventListener('DOMContentLoaded', () => {
         splash.classList.add('splash-hide');
         setTimeout(() => {
             splash.remove();
-            initAdMob();
+            initAdMob(); // بعد الـ splash — Activity مستقرة تماماً
         }, 650);
     }, 1900);
 });
@@ -5195,15 +5195,19 @@ async function initAdMob() {
         const todayCount = (iData.date === todayKey) ? (iData.count || 0) : 0;
         if (todayCount >= INTERSTITIAL_MAX_DAY) return;
 
-        const adLoaded = new Promise((resolve, reject) => {
-            const t = setTimeout(() => reject(new Error('timeout')), 10000);
+        // انتظر حتى الإعلان محمّل فعلاً قبل showInterstitial
+        // prepareInterstitial يُرسل الطلب فقط — لا يضمن التحميل
+        // استدعاء showInterstitial قبل التحميل يُلقي RuntimeException نيتيف
+        await new Promise((resolve, reject) => {
+            const t = setTimeout(() => reject(new Error('ad timeout')), 15000);
             AdMob.addListener('interstitialAdLoaded', () => { clearTimeout(t); resolve(); });
-            AdMob.addListener('interstitialAdFailedToLoad', (e) => { clearTimeout(t); reject(new Error('ad failed')); });
+            AdMob.addListener('interstitialAdFailedToLoad', () => { clearTimeout(t); reject(new Error('ad failed')); });
+            AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL_ID });
         });
-        await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL_ID });
-        await adLoaded;
+
         await AdMob.showInterstitial();
         localStorage.setItem('fp_interstitial', JSON.stringify({ date: todayKey, count: todayCount + 1 }));
+        // أعد التحميل للجلسة القادمة
         AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL_ID }).catch(() => {});
     } catch (e) {
         console.warn('AdMob not available (web build or plugin missing):', e.message);
