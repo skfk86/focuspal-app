@@ -25,6 +25,9 @@
     "StatusBar": {
       "style": "DARK",
       "backgroundColor": "#0a0b0f"
+    },
+    "AdMob": {
+      "appId": "ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY"
     }
   }
 }

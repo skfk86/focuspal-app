@@ -6,22 +6,28 @@ android/ folder to git — CI runs `npx cap add android` fresh every time
 and this script re-applies our tweaks on top of it.
 
 Usage:
-    python3 scripts/patch-android.py            # manifest only
-    python3 scripts/patch-android.py --signing   # manifest + release signing config
+    python3 scripts/patch-android.py            # manifest + admob only
+    python3 scripts/patch-android.py --signing   # manifest + admob + release signing config
+
+Env vars (read automatically if set):
+    ADMOB_APP_ID   — your AdMob app ID, e.g. ca-app-pub-XXXX~YYYY
+                     Required for the AdMob <meta-data> tag in the manifest.
 """
+import os
 import re
 import sys
 
 MANIFEST_PATH = 'android/app/src/main/AndroidManifest.xml'
-GRADLE_PATH = 'android/app/build.gradle'
+GRADLE_PATH   = 'android/app/build.gradle'
 
 
-def patch_manifest():
+# ── Manifest: local-notifications alarm permission ────────────────────────────
+def patch_manifest_alarm():
     with open(MANIFEST_PATH) as f:
         content = f.read()
 
     if 'SCHEDULE_EXACT_ALARM' in content:
-        print('AndroidManifest.xml already patched, skipping.')
+        print('AndroidManifest.xml: SCHEDULE_EXACT_ALARM already present, skipping.')
         return
 
     content = content.replace(
@@ -30,15 +36,61 @@ def patch_manifest():
     )
     with open(MANIFEST_PATH, 'w') as f:
         f.write(content)
-    print('AndroidManifest.xml patched (added SCHEDULE_EXACT_ALARM).')
+    print('AndroidManifest.xml patched — added SCHEDULE_EXACT_ALARM.')
 
 
+# ── Manifest: AdMob APPLICATION_ID meta-data ─────────────────────────────────
+def patch_manifest_admob():
+    admob_app_id = os.environ.get('ADMOB_APP_ID', '').strip()
+    if not admob_app_id:
+        print('ADMOB_APP_ID env var not set — skipping AdMob manifest patch.')
+        return
+
+    with open(MANIFEST_PATH) as f:
+        content = f.read()
+
+    # Idempotency guard
+    if 'com.google.android.gms.ads.APPLICATION_ID' in content:
+        print('AndroidManifest.xml: AdMob meta-data already present, skipping.')
+        return
+
+    # 1. Ensure INTERNET permission exists (AdMob requires it)
+    if 'android.permission.INTERNET' not in content:
+        content = content.replace(
+            '</manifest>',
+            '    <uses-permission android:name="android.permission.INTERNET" />\n</manifest>'
+        )
+        print('AndroidManifest.xml patched — added INTERNET permission.')
+
+    # 2. Inject <meta-data> inside <application ...>
+    admob_meta = (
+        f'\n        <meta-data\n'
+        f'            android:name="com.google.android.gms.ads.APPLICATION_ID"\n'
+        f'            android:value="{admob_app_id}" />'
+    )
+    # Insert just after the opening <application tag (ends with '>')
+    new_content, n = re.subn(
+        r'(<application\b[^>]*>)',
+        r'\1' + admob_meta,
+        content,
+        count=1
+    )
+    if n == 0:
+        print('ERROR: could not find <application> tag in AndroidManifest.xml', file=sys.stderr)
+        sys.exit(1)
+
+    with open(MANIFEST_PATH, 'w') as f:
+        f.write(new_content)
+    print(f'AndroidManifest.xml patched — AdMob APPLICATION_ID = {admob_app_id}')
+
+
+# ── build.gradle: release signing config ─────────────────────────────────────
 def patch_gradle_signing():
     with open(GRADLE_PATH) as f:
         content = f.read()
 
     if 'RELEASE_STORE_FILE' in content:
-        print('build.gradle already patched, skipping.')
+        print('build.gradle: signing config already present, skipping.')
         return
 
     signing_block = (
@@ -70,10 +122,12 @@ def patch_gradle_signing():
 
     with open(GRADLE_PATH, 'w') as f:
         f.write(new_content)
-    print('build.gradle patched (added release signingConfig).')
+    print('build.gradle patched — added release signingConfig.')
 
 
+# ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == '__main__':
-    patch_manifest()
+    patch_manifest_alarm()
+    patch_manifest_admob()
     if '--signing' in sys.argv:
         patch_gradle_signing()

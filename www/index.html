@@ -1944,13 +1944,12 @@
             font-weight: 700;
             display: flex;
             align-items: center;
-            justify-content: center;
             gap: 6px;
             transition: all 0.2s;
         }
 
         .chat-usage-bar i { color: var(--accent2); font-size: 0.85rem; }
-        .chat-usage-bar span { color: var(--accent2); font-family: 'Space Mono', monospace; }
+        .chat-usage-bar span { color: var(--accent2); font-family: 'Space Mono', monospace; font-size: 1rem; }
 
         .chat-usage-bar.depleted {
             border-color: rgba(189,99,87,0.35);
@@ -2441,132 +2440,49 @@
             background: var(--border);
         }
 
-        /* Subscription modal */
-        .plan-toggle {
-            display: flex;
-            gap: 8px;
-            background: var(--surface2);
-            border-radius: 14px;
-            padding: 5px;
-            margin-bottom: 20px;
-        }
-
-        .plan-pill {
-            flex: 1;
-            text-align: center;
-            padding: 10px;
-            border-radius: 10px;
-            font-family: 'Cairo', sans-serif;
-            font-size: 0.82rem;
-            font-weight: 700;
-            color: var(--text2);
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-        }
-
-        .plan-pill.selected {
-            background: linear-gradient(135deg, var(--accent), var(--pink));
-            color: white;
-        }
-
-        .plan-pill .save-badge {
-            position: absolute;
-            top: -9px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--green);
-            color: #0a0b0f;
-            font-size: 0.6rem;
-            font-weight: 800;
-            padding: 2px 7px;
-            border-radius: 8px;
-            white-space: nowrap;
-        }
-
-        .plan-price-display {
-            text-align: center;
-            margin-bottom: 22px;
-        }
-
-        .plan-price-display .amount {
-            font-family: 'Space Mono', monospace;
-            font-size: 2.6rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--accent2), var(--pink));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .plan-price-display .unit {
-            font-size: 0.85rem;
-            color: var(--text2);
-            font-weight: 700;
-            margin-right: 4px;
-        }
-
-        .plan-price-display .savings-note {
-            margin-top: 6px;
-            font-size: 0.76rem;
-            color: var(--green);
-            font-weight: 700;
-        }
-
-        .plan-feature-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 22px;
-        }
-
-        .plan-feature-item {
-            display: flex;
+        /* Watch-Ad button */
+        .watch-ad-btn {
+            display: inline-flex;
             align-items: center;
-            gap: 12px;
-            font-size: 0.85rem;
-            color: var(--text);
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: none;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: #0a0b0f;
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 800;
+            cursor: pointer;
+            margin-right: auto;
+            flex-shrink: 0;
+            transition: opacity 0.15s, transform 0.15s;
         }
+        .watch-ad-btn:active { transform: scale(0.96); }
+        .watch-ad-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .plan-feature-item .check-badge {
-            width: 26px;
-            height: 26px;
-            border-radius: 8px;
-            background: rgba(111,162,135,0.15);
-            color: var(--green);
-            display: flex;
+        /* Ad loading overlay */
+        #adLoadingOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9000;
+            background: rgba(10,11,15,0.85);
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
-            font-size: 0.75rem;
+            flex-direction: column;
+            gap: 16px;
+            color: var(--text);
         }
-
-        .plan-subscribe-btn {
-            width: 100%;
-            padding: 14px;
-            border-radius: 14px;
-            border: none;
-            background: linear-gradient(135deg, var(--accent), var(--pink));
-            color: white;
-            font-family: 'Cairo', sans-serif;
-            font-size: 0.95rem;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 8px 20px rgba(201,154,91,0.25);
-            transition: transform 0.15s;
+        #adLoadingOverlay.visible { display: flex; }
+        #adLoadingOverlay .ad-spinner {
+            width: 44px; height: 44px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
-        .plan-subscribe-btn:active { transform: scale(0.98); }
-
-        .plan-subscribed-badge {
-            width: 100%;
-            padding: 14px;
-            border-radius: 14px;
-            background: rgba(111,162,135,0.12);
-            border: 1px solid rgba(111,162,135,0.3);
-            color: var(--green);
-            text-align: center;
-            font-weight: 800;
-            font-size: 0.9rem;
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* session mode badge */
         .session-mode-badge {
@@ -3010,8 +2926,11 @@
         <div class="tab-content" id="tab-ai">
             <div class="chat-wrap">
                 <div class="chat-usage-bar" id="chatUsageBar">
-                    <i class="fas fa-comment-dots"></i>
-                    <span id="chatUsageText">5 من 5</span> رسائل متبقية اليوم
+                    <i class="fas fa-bolt"></i>
+                    <span id="chatUsageText">0</span> طلب متبقٍ
+                    <button class="watch-ad-btn" id="watchAdBtnTop" onclick="showRewardedAd()">
+                        <i class="fas fa-play-circle"></i> شاهد إعلانًا (+3)
+                    </button>
                 </div>
                 <!-- Messages -->
                 <div class="chat-messages" id="chatMessages">
@@ -3064,16 +2983,7 @@
                             </div>
                             <i class="fas fa-chevron-left" style="color:var(--text2); font-size:0.8rem;"></i>
                         </div>
-                        <div class="settings-row" style="cursor:pointer;" onclick="openSubscriptionModal()">
-                            <div class="settings-row-left">
-                                <div class="settings-row-icon" style="background:rgba(232,200,150,0.15); color:var(--accent2);"><i class="fas fa-crown"></i></div>
-                                <div class="settings-row-text">
-                                    <h4>الاشتراك المميز</h4>
-                                    <p id="subscriptionRowLabel">مجاني — قم بالترقية لمزيد من المزايا</p>
-                                </div>
-                            </div>
-                            <i class="fas fa-chevron-left" style="color:var(--text2); font-size:0.8rem;"></i>
-                        </div>
+
                     </div>
                 </div>
 
@@ -3218,7 +3128,7 @@
                                 <div class="settings-row-icon" style="background:rgba(201,154,91,0.15); color:var(--accent2);"><i class="fas fa-robot"></i></div>
                                 <div class="settings-row-text">
                                     <h4>مساعد Kairos</h4>
-                                    <p id="aiKeySettingLabel">يعمل بالمفتاح المشترك — 5 رسائل يوميًا</p>
+                                    <p id="aiKeySettingLabel">شاهد إعلانًا للحصول على 3 طلبات ذكاء اصطناعي</p>
                                 </div>
                             </div>
                         </div>
@@ -3239,6 +3149,13 @@
             </div>
         </div>
     </div>
+
+
+<!-- ===== AD LOADING OVERLAY ===== -->
+<div id="adLoadingOverlay">
+    <div class="ad-spinner"></div>
+    <span style="font-size:0.9rem; color:var(--text2);">جارٍ تحميل الإعلان…</span>
+</div>
 
     <!-- Bottom Nav -->
     <div class="nav">
@@ -3453,40 +3370,6 @@
     </div>
 </div>
 
-<!-- ===== SUBSCRIPTION MODAL ===== -->
-<div class="modal-overlay" id="subscriptionModal">
-    <div class="modal-box">
-        <div class="modal-handle"></div>
-        <div class="modal-header">
-            <div class="modal-title"><i class="fas fa-crown" style="margin-left:6px; color:var(--accent2);"></i>الاشتراك المميز</div>
-            <div class="modal-subtitle">افتح كامل إمكانيات Kairos</div>
-        </div>
-        <div class="modal-body">
-            <div class="plan-toggle">
-                <div class="plan-pill" id="planMonthlyBtn" onclick="selectPlan('monthly')">شهري</div>
-                <div class="plan-pill" id="planYearlyBtn" onclick="selectPlan('yearly')">
-                    سنوي
-                    <span class="save-badge">وفّر 33%</span>
-                </div>
-            </div>
-            <div class="plan-price-display">
-                <span class="amount">$<span id="subPriceVal">14.99</span></span>
-                <span class="unit" id="subPriceUnit">/ شهريًا</span>
-                <div class="savings-note" id="subSavingsNote" style="display:none;">يعادل $10 فقط شهريًا مقارنة بـ 14.99$</div>
-            </div>
-            <div class="plan-feature-list">
-                <div class="plan-feature-item"><div class="check-badge"><i class="fas fa-check"></i></div>إزالة الإعلانات نهائيًا</div>
-                <div class="plan-feature-item"><div class="check-badge"><i class="fas fa-check"></i></div>50 طلب ذكاء اصطناعي يوميًا (بدل 5)</div>
-                <div class="plan-feature-item"><div class="check-badge"><i class="fas fa-check"></i></div>تحليل إنتاجية متقدم وإنشاء روتين كامل</div>
-                <div class="plan-feature-item"><div class="check-badge"><i class="fas fa-check"></i></div>فتح كامل إمكانيات المساعد الذكي</div>
-            </div>
-            <button class="plan-subscribe-btn" onclick="confirmSubscription()" id="subConfirmBtn">اشترك الآن</button>
-        </div>
-        <div class="modal-footer">
-            <button class="modal-btn cancel" onclick="closeModal('subscriptionModal')" style="width:100%;">ليس الآن</button>
-        </div>
-    </div>
-</div>
 
 <!-- ===== ADD NOTE MODAL ===== -->
 <!-- ===== CONFIRM MODAL ===== -->
@@ -3621,7 +3504,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateQuickHints();
     initNotesSearch();
     updateAccountUI();
-    updateSubscriptionRowUI();
+    initAdMob(); // تهيئة AdMob وعرض الإعلان البيني إذا اقتضى الأمر
 
     setTimeout(() => {
         const splash = document.getElementById('appSplash');
@@ -5274,11 +5157,50 @@ const AI_SYSTEM_PROMPT = `أنت "مساعد Kairos" — مدرب إنتاجية
 
 let chatHistory = [];
 let chatLoading = false;
-const FREE_CHAT_LIMIT = 5;
-const PREMIUM_CHAT_LIMIT = 50;
+// ===== AdMob Credits System =====
+// User has 0 credits by default.
+// Watch rewarded ad → earn 3 credits. No auto-reset.
+// Interstitial shown up to 2× per day.
 
-function getActiveKey() {
-    return DEFAULT_GROQ_KEY;
+const AD_CREDITS_PER_AD    = 3;   // طلبات تُمنح عند مشاهدة إعلان بمكافأة
+const INTERSTITIAL_MAX_DAY = 2;   // أقصى عدد إعلانات بينية يوميًا
+
+// --- AdMob Unit IDs (استبدل بمعرفاتك الحقيقية من Google AdMob) ---
+const ADMOB_APP_ID          = 'ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY';
+const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-XXXXXXXXXXXXXXXX/ZZZZZZZZZZ';
+const ADMOB_REWARDED_ID     = 'ca-app-pub-XXXXXXXXXXXXXXXX/WWWWWWWWWW';
+
+// Test IDs (uncomment during development):
+// const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-3940256099942544/1033173712';
+// const ADMOB_REWARDED_ID     = 'ca-app-pub-3940256099942544/5224354917';
+
+let admobReady = false;
+
+async function initAdMob() {
+    try {
+        const { AdMob } = await import('@capacitor-community/admob');
+        await AdMob.initialize({ requestTrackingAuthorization: false });
+        admobReady = true;
+
+        // Load interstitial eagerly
+        await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL_ID });
+
+        // Show interstitial up to 2× today on launch
+        const todayKey = getTodayKey();
+        const iData = JSON.parse(localStorage.getItem('fp_interstitial') || '{}');
+        const todayCount = (iData.date === todayKey) ? (iData.count || 0) : 0;
+        if (todayCount < INTERSTITIAL_MAX_DAY) {
+            await AdMob.showInterstitial();
+            localStorage.setItem('fp_interstitial', JSON.stringify({
+                date: todayKey,
+                count: todayCount + 1
+            }));
+            // Reload for next time
+            await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL_ID });
+        }
+    } catch (e) {
+        console.warn('AdMob not available (web build or plugin missing):', e.message);
+    }
 }
 
 function getTodayKey() {
@@ -5286,38 +5208,68 @@ function getTodayKey() {
     return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
-function getChatUsage() {
-    const data = JSON.parse(localStorage.getItem('fp_chat_usage') || '{}');
-    if (data.date !== getTodayKey()) return { date: getTodayKey(), count: 0 };
-    return data;
+function getActiveKey() {
+    return DEFAULT_GROQ_KEY;
 }
 
-function getDailyLimit() {
-    return isPremium() ? PREMIUM_CHAT_LIMIT : FREE_CHAT_LIMIT;
+// --- AI Credits ---
+function getAICredits() {
+    return parseInt(localStorage.getItem('fp_ai_credits') || '0', 10);
 }
 
-function getChatRemaining() {
-    return Math.max(0, getDailyLimit() - getChatUsage().count);
-}
-
-function incrementChatUsage() {
-    const usage = getChatUsage();
-    usage.count++;
-    localStorage.setItem('fp_chat_usage', JSON.stringify(usage));
+function setAICredits(n) {
+    localStorage.setItem('fp_ai_credits', String(Math.max(0, n)));
     updateChatUsageUI();
 }
 
+function getChatRemaining() {
+    return getAICredits();
+}
+
+function incrementChatUsage() {
+    setAICredits(getAICredits() - 1);
+}
+
 function updateChatUsageUI() {
-    const bar = document.getElementById('chatUsageBar');
     const text = document.getElementById('chatUsageText');
     const settingLabel = document.getElementById('aiKeySettingLabel');
-    const remaining = getChatRemaining();
-    const limit = getDailyLimit();
-    if (text) text.textContent = `${remaining} من ${limit}`;
-    if (bar) bar.classList.toggle('depleted', remaining === 0);
-    if (settingLabel) settingLabel.textContent = remaining > 0
-        ? `${isPremium() ? '⭐ مميز' : 'المفتاح المشترك'} — ${remaining} من ${limit} رسائل متبقية اليوم`
-        : `نفدت رسائل اليوم، عد غدًا`;
+    const credits = getAICredits();
+    if (text) text.textContent = String(credits);
+    if (settingLabel) {
+        settingLabel.textContent = credits > 0
+            ? `لديك ${credits} طلب — شاهد إعلانًا للحصول على المزيد`
+            : 'شاهد إعلانًا للحصول على 3 طلبات ذكاء اصطناعي';
+    }
+}
+
+async function showRewardedAd() {
+    const btn = document.getElementById('watchAdBtnTop');
+    if (btn) btn.disabled = true;
+    const overlay = document.getElementById('adLoadingOverlay');
+    if (overlay) overlay.classList.add('visible');
+
+    try {
+        if (!admobReady) {
+            // Fallback for web/debug: grant credits directly
+            setAICredits(getAICredits() + AD_CREDITS_PER_AD);
+            showNotif(`🎉 حصلت على ${AD_CREDITS_PER_AD} طلبات!`, 'success');
+            return;
+        }
+        const { AdMob } = await import('@capacitor-community/admob');
+        await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED_ID });
+        const result = await AdMob.showRewardVideoAd();
+        if (result && result.type === 'rewarded') {
+            setAICredits(getAICredits() + AD_CREDITS_PER_AD);
+            showNotif(`🎉 حصلت على ${AD_CREDITS_PER_AD} طلبات ذكاء اصطناعي!`, 'success');
+        } else {
+            showNotif('⚠️ يجب مشاهدة الإعلان كاملًا للحصول على الطلبات.', 'error');
+        }
+    } catch (e) {
+        showNotif('⚠️ تعذر تحميل الإعلان. تحقق من الإنترنت وحاول مجددًا.', 'error');
+    } finally {
+        if (overlay) overlay.classList.remove('visible');
+        if (btn) btn.disabled = false;
+    }
 }
 
 // ===== Account (local demo — no real backend) =====
@@ -5407,63 +5359,8 @@ function updateAccountUI() {
     }
 }
 
-// ===== Subscription (local demo — no real payment processor) =====
-let selectedPlan = 'monthly';
-
-function isPremium() {
-    const sub = JSON.parse(localStorage.getItem('fp_subscription') || 'null');
-    return !!(sub && sub.active);
-}
-
-function openSubscriptionModal() {
-    const sub = JSON.parse(localStorage.getItem('fp_subscription') || 'null');
-    selectedPlan = (sub && sub.plan) || 'monthly';
-    applyPlanUI();
-    openModal('subscriptionModal');
-}
-
-function selectPlan(plan) {
-    selectedPlan = plan;
-    applyPlanUI();
-}
-
-function applyPlanUI() {
-    const monthlyBtn = document.getElementById('planMonthlyBtn');
-    const yearlyBtn = document.getElementById('planYearlyBtn');
-    if (!monthlyBtn) return;
-    monthlyBtn.classList.toggle('selected', selectedPlan === 'monthly');
-    yearlyBtn.classList.toggle('selected', selectedPlan === 'yearly');
-    document.getElementById('subPriceVal').textContent = selectedPlan === 'monthly' ? '14.99' : '120';
-    document.getElementById('subPriceUnit').textContent = selectedPlan === 'monthly' ? '/ شهريًا' : '/ سنويًا';
-    document.getElementById('subSavingsNote').style.display = selectedPlan === 'yearly' ? 'block' : 'none';
-
-    const confirmBtn = document.getElementById('subConfirmBtn');
-    const alreadyOnPlan = isPremium() && (JSON.parse(localStorage.getItem('fp_subscription')||'{}').plan === selectedPlan);
-    if (alreadyOnPlan) {
-        confirmBtn.outerHTML = `<div class="plan-subscribed-badge" id="subConfirmBtn"><i class="fas fa-check-circle"></i> أنت مشترك في هذه الخطة</div>`;
-    } else if (!document.getElementById('subConfirmBtn').classList.contains('plan-subscribe-btn')) {
-        // restore button if it was replaced by the badge for a different plan
-        const badge = document.getElementById('subConfirmBtn');
-        badge.outerHTML = `<button class="plan-subscribe-btn" onclick="confirmSubscription()" id="subConfirmBtn">اشترك الآن</button>`;
-    }
-}
-
-function confirmSubscription() {
-    localStorage.setItem('fp_subscription', JSON.stringify({ plan: selectedPlan, active: true, date: new Date().toISOString() }));
-    closeModal('subscriptionModal');
-    updateSubscriptionRowUI();
-    updateChatUsageUI();
-    showNotif('🎉 تم تفعيل الاشتراك المميز! استمتع بكل الميزات', 'success');
-}
-
-function updateSubscriptionRowUI() {
-    const label = document.getElementById('subscriptionRowLabel');
-    if (!label) return;
-    const sub = JSON.parse(localStorage.getItem('fp_subscription') || 'null');
-    label.textContent = (sub && sub.active)
-        ? `⭐ مفعّل — خطة ${sub.plan === 'yearly' ? 'سنوية' : 'شهرية'}`
-        : 'مجاني — قم بالترقية لمزيد من المزايا';
-}
+// ===== Subscription system removed — replaced by AdMob rewarded ads =====
+// (see showRewardedAd / initAdMob above)
 
 function initEnterKeys() {
     const taskInput = document.getElementById('taskInput');
@@ -5507,9 +5404,7 @@ async function sendChatMessage() {
         appendUserBubble(text);
         input.value = '';
         input.style.height = 'auto';
-        appendAIBubble(isPremium()
-            ? `🌙 لقد استخدمت رسائلك الـ${getDailyLimit()} لهذا اليوم. عد غدًا وسأكون هنا جاهزًا لمساعدتك! 💛`
-            : `🌙 لقد استخدمت رسائلك الخمس المجانية لهذا اليوم. عد غدًا، أو 👑 فعّل الاشتراك المميز للحصول على 50 رسالة يوميًا!\n\nفي هذه الأثناء يمكنك متابعة تركيزك ومهامك من بقية التطبيق.`);
+        appendAIBubble(`⚡ ليس لديك طلبات ذكاء اصطناعي متبقية.\n\nاضغط زر **"شاهد إعلانًا (+3)"** في الأعلى لمشاهدة إعلان قصير والحصول على 3 طلبات جديدة فورًا! 🎯`);
         return;
     }
 
