@@ -5261,16 +5261,30 @@ async function showRewardedAd() {
 
     try {
         if (!admobReady) {
-            // No AdMob in web preview: deny credits (consistent with production policy)
             showNotif('⚠️ الإعلانات متاحة فقط في تطبيق Android.', 'error');
             return;
         }
-        // Use the native bridge — same pattern as initAdMob (no dynamic import)
         const AdMob = window.Capacitor?.Plugins?.AdMob;
         if (!AdMob) throw new Error('AdMob bridge not registered');
-        await AdMob.prepareRewardedInterstitialAd({ adId: ADMOB_REWARDED_INTER_ID });
-        const result = await AdMob.showRewardedInterstitialAd();
-        if (result && result.type === 'rewarded') {
+
+        // ── FIX: انتظر تحميل الإعلان فعلاً قبل العرض ──
+        // prepareRewardedInterstitialAd يُرسل الطلب فقط — show قبل التحميل يكرش
+        await new Promise((resolve, reject) => {
+            const t = setTimeout(() => reject(new Error('ad load timeout')), 15000);
+            AdMob.addListener('rewardedInterstitialAdLoaded', () => { clearTimeout(t); resolve(); });
+            AdMob.addListener('rewardedInterstitialAdFailedToLoad', () => { clearTimeout(t); reject(new Error('ad failed to load')); });
+            AdMob.prepareRewardedInterstitialAd({ adId: ADMOB_REWARDED_INTER_ID });
+        });
+
+        // ── FIX: في admob@8 المكافأة تأتي عبر event وليس return value ──
+        const rewarded = await new Promise((resolve) => {
+            const t = setTimeout(() => resolve(false), 60000);
+            AdMob.addListener('rewardedInterstitialAdRewarded', () => { clearTimeout(t); resolve(true); });
+            AdMob.addListener('rewardedInterstitialAdDismissed', () => { clearTimeout(t); resolve(false); });
+            AdMob.showRewardedInterstitialAd();
+        });
+
+        if (rewarded) {
             setAICredits(getAICredits() + AD_CREDITS_PER_AD);
             showNotif(`🎉 حصلت على ${AD_CREDITS_PER_AD} طلبات ذكاء اصطناعي!`, 'success');
         } else {
