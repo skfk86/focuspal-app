@@ -5143,8 +5143,8 @@ const INTERSTITIAL_MAX_DAY = 2;   // أقصى عدد إعلانات بينية �
 
 // --- AdMob Unit IDs (استبدل بمعرفاتك الحقيقية من Google AdMob) ---
 const ADMOB_APP_ID          = 'ca-app-pub-7608701150166997~5972531267';
-const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-3940256099942544/1033173712'; // TEST
-const ADMOB_REWARDED_INTER_ID = 'ca-app-pub-3940256099942544/5354046379'; // TEST rewarded
+const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-7608701150166997/2397628230';
+const ADMOB_REWARDED_INTER_ID = 'ca-app-pub-7608701150166997/4979454344';
 
 // Test IDs (uncomment during development):
 // const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-3940256099942544/1033173712';
@@ -5265,27 +5265,23 @@ async function showRewardedAd() {
         if (_adRewardHandle) { try { _adRewardHandle.remove(); } catch(_){} _adRewardHandle = null; }
         if (_adClosedHandle) { try { _adClosedHandle.remove(); } catch(_){} _adClosedHandle = null; }
 
-        await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED_INTER_ID });
+        await AdMob.prepareRewardInterstitialAd({ adId: ADMOB_REWARDED_INTER_ID });
 
         const safetyTimer = setTimeout(function() { _adRewardInProg = false; }, 120000);
 
-        _adRewardHandle = await AdMob.addListener('onRewardedVideoAdReward', function() {
-            if (_adClosedHandle) { _adClosedHandle.remove(); _adClosedHandle = null; }
+        // showRewardInterstitialAd يُحل عند كسب المكافأة فعلاً (من الوثائق الرسمية)
+        const result = await AdMob.showRewardInterstitialAd();
+        clearTimeout(safetyTimer);
+        if (result && result.type) {
             setAICredits(getAICredits() + AD_CREDITS_PER_AD);
             showNotif(`🎉 حصلت على ${AD_CREDITS_PER_AD} طلبات ذكاء اصطناعي!`, 'success');
-            clearTimeout(safetyTimer);
-            _adRewardInProg = false;
-        });
-
-        _adClosedHandle = await AdMob.addListener('onRewardedVideoAdClosed', function() {
-            clearTimeout(safetyTimer);
-            setTimeout(function() { _adRewardInProg = false; }, 300);
-        });
-
-        await AdMob.showRewardVideoAd();
+        } else {
+            showNotif('⚠️ يجب مشاهدة الإعلان كاملًا للحصول على الطلبات.', 'error');
+        }
+        _adRewardInProg = false;
 
     } catch(e) {
-        showNotif('ERR: ' + (e?.message || e?.code || JSON.stringify(e)), 'error');
+        showNotif('⚠️ تعذر تحميل الإعلان. تحقق من الإنترنت وحاول مجددًا.', 'error');
         _adRewardInProg = false;
     } finally {
         if (overlay) overlay.classList.remove('visible');
