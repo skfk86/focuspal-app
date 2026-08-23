@@ -5285,12 +5285,7 @@ async function showRewardedAd() {
         await AdMob.showRewardVideoAd();
 
     } catch(e) {
-        const msg = (e?.message || '').toLowerCase();
-        if (!navigator.onLine) {
-            showNotif('⚠️ لا يوجد اتصال بالإنترنت.', 'error');
-        } else {
-            showNotif('⚠️ تعذر تحميل الإعلان. تحقق من الإنترنت وحاول مجددًا.', 'error');
-        }
+        showNotif('ERR: ' + (e?.message || e?.code || JSON.stringify(e)), 'error');
         _adRewardInProg = false;
     } finally {
         if (overlay) overlay.classList.remove('visible');
