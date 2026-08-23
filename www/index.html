@@ -5294,7 +5294,7 @@ async function showRewardedAd() {
             showNotif('⚠️ يجب مشاهدة الإعلان كاملًا للحصول على الطلبات.', 'error');
         }
     } catch (e) {
-        showNotif('⚠️ تعذر تحميل الإعلان. تحقق من الإنترنت وحاول مجددًا.', 'error');
+        showNotif('ERR: ' + (e?.message || e?.code || JSON.stringify(e)), 'error');
     } finally {
         if (overlay) overlay.classList.remove('visible');
         if (btn) btn.disabled = false;
