@@ -5139,7 +5139,7 @@ let chatLoading = false;
 // Interstitial shown up to 2× per day.
 
 const AD_CREDITS_PER_AD    = 3;   // طلبات تُمنح عند مشاهدة إعلان بمكافأة
-const INTERSTITIAL_MAX_DAY = 2;   // أقصى عدد إعلانات بينية يوميًا
+const INTERSTITIAL_MAX_DAY = 5;   // أقصى عدد إعلانات بينية يوميًا
 
 // --- AdMob Unit IDs (استبدل بمعرفاتك الحقيقية من Google AdMob) ---
 const ADMOB_APP_ID          = 'ca-app-pub-7608701150166997~5972531267';
@@ -5163,7 +5163,7 @@ function _loadInterstitial() {
     _intrLoading = true;
     _intrReady   = false;
     AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL_ID })
-        .then(function() { _intrReady = true;  _intrLoading = false; })
+        .then(function() { _intrReady = true; _intrLoading = false; setTimeout(_showInterstitialIfAllowed, 500); })
         .catch(function() { _intrLoading = false; setTimeout(_loadInterstitial, 30000); });
 }
 
@@ -5198,7 +5198,6 @@ async function initAdMob() {
         });
 
         _loadInterstitial();
-        setTimeout(_showInterstitialIfAllowed, 3000);
 
     } catch(e) {
         admobReady = true;
