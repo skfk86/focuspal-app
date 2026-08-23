@@ -5175,42 +5175,59 @@ const ADMOB_REWARDED_INTER_ID = 'ca-app-pub-7608701150166997/4979454344';
 // const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-3940256099942544/1033173712';
 // const ADMOB_REWARDED_INTER_ID = 'ca-app-pub-3940256099942544/5224354917'; // rewarded interstitial test ID
 
-let admobReady = false;
+let admobReady       = false;
+let _intrReady       = false;
+let _intrLoading     = false;
+let _adRewardInProg  = false;
+let _adRewardHandle  = null;
+let _adClosedHandle  = null;
+
+function _loadInterstitial() {
+    const AdMob = window.Capacitor?.Plugins?.AdMob;
+    if (!AdMob || _intrLoading) return;
+    _intrLoading = true;
+    _intrReady   = false;
+    AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL_ID })
+        .then(function() { _intrReady = true;  _intrLoading = false; })
+        .catch(function() { _intrLoading = false; setTimeout(_loadInterstitial, 30000); });
+}
+
+function _showInterstitialIfAllowed() {
+    const AdMob = window.Capacitor?.Plugins?.AdMob;
+    if (!AdMob || !admobReady || !_intrReady) return;
+    const todayKey   = getTodayKey();
+    const iData      = JSON.parse(localStorage.getItem('fp_interstitial') || '{}');
+    const todayCount = (iData.date === todayKey) ? (iData.count || 0) : 0;
+    if (todayCount >= INTERSTITIAL_MAX_DAY) return;
+    _intrReady = false;
+    AdMob.showInterstitial()
+        .then(function() {
+            localStorage.setItem('fp_interstitial',
+                JSON.stringify({ date: todayKey, count: todayCount + 1 }));
+        })
+        .catch(function() { setTimeout(_loadInterstitial, 2000); });
+}
 
 async function initAdMob() {
     try {
-        // In Capacitor vanilla-JS apps (no bundler) plugins are NOT importable
-        // as ES modules — they register on the native bridge and are exposed via
-        // window.Capacitor.Plugins.  Dynamic import('@capacitor-community/admob')
-        // fails at runtime because node_modules/ is absent in the webview assets.
-        if (!isNativeApp()) return; // AdMob is Android-only
+        if (!isNativeApp()) return;
         const AdMob = window.Capacitor?.Plugins?.AdMob;
-        if (!AdMob) throw new Error('AdMob bridge not registered');
+        if (!AdMob) return;
 
         await AdMob.initialize({ requestTrackingAuthorization: false, initializeForTesting: false });
         admobReady = true;
 
-        const todayKey = getTodayKey();
-        const iData = JSON.parse(localStorage.getItem('fp_interstitial') || '{}');
-        const todayCount = (iData.date === todayKey) ? (iData.count || 0) : 0;
-        if (todayCount >= INTERSTITIAL_MAX_DAY) return;
-
-        // انتظر حتى الإعلان محمّل فعلاً قبل showInterstitial
-        // prepareInterstitial يُرسل الطلب فقط — لا يضمن التحميل
-        // استدعاء showInterstitial قبل التحميل يُلقي RuntimeException نيتيف
-        await new Promise((resolve, reject) => {
-            const t = setTimeout(() => reject(new Error('ad timeout')), 15000);
-            AdMob.addListener('interstitialAdLoaded', () => { clearTimeout(t); resolve(); });
-            AdMob.addListener('interstitialAdFailedToLoad', () => { clearTimeout(t); reject(new Error('ad failed')); });
-            AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL_ID });
+        AdMob.addListener('onInterstitialAdClosed', function() {
+            _intrReady = false;
+            setTimeout(_loadInterstitial, 1000);
         });
 
-        await AdMob.showInterstitial();
-        localStorage.setItem('fp_interstitial', JSON.stringify({ date: todayKey, count: todayCount + 1 }));
-        // أعد التحميل للجلسة القادمة
-        AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL_ID }).catch(() => {});
-    } catch (e) {
-        console.warn('AdMob not available (web build or plugin missing):', e.message);
+        _loadInterstitial();
+        setTimeout(_showInterstitialIfAllowed, 3000);
+
+    } catch(e) {
+        admobReady = true;
+        console.warn('AdMob init:', e.message);
     }
 }
 
@@ -5261,30 +5278,16 @@ async function showRewardedAd() {
 
     try {
         if (!admobReady) {
+            // No AdMob in web preview: deny credits (consistent with production policy)
             showNotif('⚠️ الإعلانات متاحة فقط في تطبيق Android.', 'error');
             return;
         }
+        // Use the native bridge — same pattern as initAdMob (no dynamic import)
         const AdMob = window.Capacitor?.Plugins?.AdMob;
         if (!AdMob) throw new Error('AdMob bridge not registered');
-
-        // ── FIX: انتظر تحميل الإعلان فعلاً قبل العرض ──
-        // prepareRewardedInterstitialAd يُرسل الطلب فقط — show قبل التحميل يكرش
-        await new Promise((resolve, reject) => {
-            const t = setTimeout(() => reject(new Error('ad load timeout')), 15000);
-            AdMob.addListener('rewardedInterstitialAdLoaded', () => { clearTimeout(t); resolve(); });
-            AdMob.addListener('rewardedInterstitialAdFailedToLoad', () => { clearTimeout(t); reject(new Error('ad failed to load')); });
-            AdMob.prepareRewardedInterstitialAd({ adId: ADMOB_REWARDED_INTER_ID });
-        });
-
-        // ── FIX: في admob@8 المكافأة تأتي عبر event وليس return value ──
-        const rewarded = await new Promise((resolve) => {
-            const t = setTimeout(() => resolve(false), 60000);
-            AdMob.addListener('rewardedInterstitialAdRewarded', () => { clearTimeout(t); resolve(true); });
-            AdMob.addListener('rewardedInterstitialAdDismissed', () => { clearTimeout(t); resolve(false); });
-            AdMob.showRewardedInterstitialAd();
-        });
-
-        if (rewarded) {
+        await AdMob.prepareRewardedInterstitialAd({ adId: ADMOB_REWARDED_INTER_ID });
+        const result = await AdMob.showRewardedInterstitialAd();
+        if (result && result.type === 'rewarded') {
             setAICredits(getAICredits() + AD_CREDITS_PER_AD);
             showNotif(`🎉 حصلت على ${AD_CREDITS_PER_AD} طلبات ذكاء اصطناعي!`, 'success');
         } else {
