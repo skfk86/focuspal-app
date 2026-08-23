@@ -2969,25 +2969,8 @@
                     <h2 class="tab-title">⚙️ الإعدادات</h2>
                 </div>
 
-                <!-- Account -->
-                <div class="settings-section">
-                    <div class="settings-section-title">الحساب</div>
-                    <div class="settings-card">
-                        <div class="settings-row" style="cursor:pointer;" id="accountRow" onclick="handleAccountRowClick()">
-                            <div class="settings-row-left">
-                                <div class="settings-row-icon" style="background:rgba(95,168,174,0.15); color:var(--cyan);"><i class="fas fa-user" id="accountIcon"></i></div>
-                                <div class="settings-row-text">
-                                    <h4>الحساب</h4>
-                                    <p id="accountLabel">سجّل الدخول لمزامنة بياناتك</p>
-                                </div>
-                            </div>
-                            <i class="fas fa-chevron-left" style="color:var(--text2); font-size:0.8rem;"></i>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- Timer Settings -->
+                
+                <!-- Timer<!-- Timer Settings -->
                 <div class="settings-section">
                     <div class="settings-section-title">المؤقت</div>
                     <div class="settings-card">
@@ -3348,13 +3331,6 @@
 </div>
 
 <!-- ===== LOGIN MODAL ===== -->
-<div class="modal-overlay" id="loginModal">
-    <div class="modal-box">
-        <div class="modal-handle"></div>
-        <div class="modal-header">
-            <div class="modal-title" id="loginModalTitle">🔐 تسجيل الدخول</div>
-            <div class="modal-subtitle">سجّل الدخول لمزامنة بياناتك عبر أجهزتك</div>
-        </div>
         <div class="modal-body">
             <input type="text" class="api-key-input" id="loginUsername" placeholder="اسم المستخدم" style="display:none; direction:rtl; text-align:right; font-family:'Cairo',sans-serif;">
             <input type="email" class="api-key-input" id="loginEmail" placeholder="you@example.com" style="direction:ltr;">
@@ -3503,7 +3479,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderWeek();
     updateQuickHints();
     initNotesSearch();
-    updateAccountUI();
     setTimeout(() => {
         const splash = document.getElementById('appSplash');
         if (!splash) return;
@@ -5271,122 +5246,59 @@ function updateChatUsageUI() {
 }
 
 async function showRewardedAd() {
-    const btn = document.getElementById('watchAdBtnTop');
-    if (btn) btn.disabled = true;
+    const btn     = document.getElementById('watchAdBtnTop');
     const overlay = document.getElementById('adLoadingOverlay');
+    if (_adRewardInProg) return;
+    _adRewardInProg = true;
+    if (btn)     btn.disabled = true;
     if (overlay) overlay.classList.add('visible');
 
     try {
         if (!admobReady) {
-            // No AdMob in web preview: deny credits (consistent with production policy)
             showNotif('⚠️ الإعلانات متاحة فقط في تطبيق Android.', 'error');
             return;
         }
-        // Use the native bridge — same pattern as initAdMob (no dynamic import)
         const AdMob = window.Capacitor?.Plugins?.AdMob;
         if (!AdMob) throw new Error('AdMob bridge not registered');
+
+        // تنظيف listeners القديمة — يمنع double-execution
+        if (_adRewardHandle) { try { _adRewardHandle.remove(); } catch(_){} _adRewardHandle = null; }
+        if (_adClosedHandle) { try { _adClosedHandle.remove(); } catch(_){} _adClosedHandle = null; }
+
         await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED_INTER_ID });
-        const result = await AdMob.showRewardVideoAd();
-        if (result && result.type === 'rewarded') {
+
+        const safetyTimer = setTimeout(function() { _adRewardInProg = false; }, 120000);
+
+        _adRewardHandle = await AdMob.addListener('onRewardedVideoAdReward', function() {
+            if (_adClosedHandle) { _adClosedHandle.remove(); _adClosedHandle = null; }
             setAICredits(getAICredits() + AD_CREDITS_PER_AD);
             showNotif(`🎉 حصلت على ${AD_CREDITS_PER_AD} طلبات ذكاء اصطناعي!`, 'success');
+            clearTimeout(safetyTimer);
+            _adRewardInProg = false;
+        });
+
+        _adClosedHandle = await AdMob.addListener('onRewardedVideoAdClosed', function() {
+            clearTimeout(safetyTimer);
+            setTimeout(function() { _adRewardInProg = false; }, 300);
+        });
+
+        await AdMob.showRewardVideoAd();
+
+    } catch(e) {
+        const msg = (e?.message || '').toLowerCase();
+        if (!navigator.onLine) {
+            showNotif('⚠️ لا يوجد اتصال بالإنترنت.', 'error');
         } else {
-            showNotif('⚠️ يجب مشاهدة الإعلان كاملًا للحصول على الطلبات.', 'error');
+            showNotif('⚠️ تعذر تحميل الإعلان. تحقق من الإنترنت وحاول مجددًا.', 'error');
         }
-    } catch (e) {
-        showNotif('⚠️ تعذر تحميل الإعلان. تحقق من الإنترنت وحاول مجددًا.', 'error');
+        _adRewardInProg = false;
     } finally {
         if (overlay) overlay.classList.remove('visible');
-        if (btn) btn.disabled = false;
+        if (btn)     btn.disabled = false;
     }
 }
 
-// ===== Account (local demo — no real backend) =====
-let loginMode = 'login';
 
-function isLoggedIn() {
-    return !!localStorage.getItem('fp_user_email');
-}
-
-function handleAccountRowClick() {
-    if (isLoggedIn()) {
-        localStorage.removeItem('fp_user_email');
-        localStorage.removeItem('fp_user_name');
-        updateAccountUI();
-        showNotif('👋 تم تسجيل الخروج');
-    } else {
-        loginMode = 'login';
-        applyLoginModeUI();
-        openModal('loginModal');
-    }
-}
-
-function toggleLoginMode() {
-    loginMode = loginMode === 'login' ? 'signup' : 'login';
-    applyLoginModeUI();
-}
-
-function applyLoginModeUI() {
-    const title = document.getElementById('loginModalTitle');
-    const submitBtn = document.getElementById('loginSubmitBtn');
-    const toggleText = document.getElementById('loginToggleText');
-    const usernameField = document.getElementById('loginUsername');
-    const confirmField = document.getElementById('loginPasswordConfirm');
-    const forgotLink = document.getElementById('loginForgotLink');
-    if (!title) return;
-    if (loginMode === 'login') {
-        title.textContent = '🔐 تسجيل الدخول';
-        submitBtn.textContent = 'تسجيل الدخول';
-        usernameField.style.display = 'none';
-        confirmField.style.display = 'none';
-        forgotLink.style.display = 'block';
-        toggleText.innerHTML = `ليس لديك حساب؟ <span onclick="toggleLoginMode()" style="color:var(--accent2); cursor:pointer; font-weight:700;">إنشاء حساب</span>`;
-    } else {
-        title.textContent = '✨ إنشاء حساب جديد';
-        submitBtn.textContent = 'إنشاء الحساب';
-        usernameField.style.display = 'block';
-        confirmField.style.display = 'block';
-        forgotLink.style.display = 'none';
-        toggleText.innerHTML = `لديك حساب بالفعل؟ <span onclick="toggleLoginMode()" style="color:var(--accent2); cursor:pointer; font-weight:700;">تسجيل الدخول</span>`;
-    }
-}
-
-function submitLogin() {
-    const username = document.getElementById('loginUsername').value.trim();
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
-    const passwordConfirm = document.getElementById('loginPasswordConfirm').value;
-
-    if (!email || !email.includes('@') || !email.includes('.')) { showNotif('⚠️ أدخل بريدًا إلكترونيًا صحيحًا'); return; }
-    if (!password || password.length < 4) { showNotif('⚠️ كلمة المرور يجب أن تكون 4 أحرف على الأقل'); return; }
-
-    if (loginMode === 'signup') {
-        if (!username) { showNotif('⚠️ أدخل اسم المستخدم'); return; }
-        if (password !== passwordConfirm) { showNotif('⚠️ كلمتا المرور غير متطابقتين'); return; }
-        localStorage.setItem('fp_user_name', username);
-    }
-
-    localStorage.setItem('fp_user_email', email);
-    document.getElementById('loginPassword').value = '';
-    document.getElementById('loginPasswordConfirm').value = '';
-    closeModal('loginModal');
-    updateAccountUI();
-    showNotif(loginMode === 'login' ? '✅ تم تسجيل الدخول بنجاح' : '🎉 تم إنشاء الحساب بنجاح', 'success');
-}
-
-function updateAccountUI() {
-    const label = document.getElementById('accountLabel');
-    const icon = document.getElementById('accountIcon');
-    if (!label) return;
-    if (isLoggedIn()) {
-        const name = localStorage.getItem('fp_user_name');
-        label.textContent = name ? `${name} — ${localStorage.getItem('fp_user_email')}` : localStorage.getItem('fp_user_email');
-        if (icon) icon.className = 'fas fa-right-from-bracket';
-    } else {
-        label.textContent = 'سجّل الدخول لمزامنة بياناتك';
-        if (icon) icon.className = 'fas fa-user';
-    }
-}
 
 // ===== Subscription system removed — replaced by AdMob rewarded ads =====
 // (see showRewardedAd / initAdMob above — uses Rewarded Interstitial, not Rewarded Video)
