@@ -5144,7 +5144,8 @@ const INTERSTITIAL_MAX_DAY = 5;   // أقصى عدد إعلانات بينية �
 // --- AdMob Unit IDs (استبدل بمعرفاتك الحقيقية من Google AdMob) ---
 const ADMOB_APP_ID          = 'ca-app-pub-7608701150166997~5972531267';
 const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-7608701150166997/2397628230';
-const ADMOB_REWARDED_INTER_ID = 'ca-app-pub-7608701150166997/4979454344';
+const ADMOB_REWARDED_INTER_ID = 'ca-app-pub-7608701150166997/4979454344'; // احتياط
+const ADMOB_REWARDED_ID       = 'ca-app-pub-7608701150166997/4979454344'; // Rewarded Video
 
 // Test IDs (uncomment during development):
 // const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-3940256099942544/1033173712';
@@ -5264,20 +5265,33 @@ async function showRewardedAd() {
         if (_adRewardHandle) { try { _adRewardHandle.remove(); } catch(_){} _adRewardHandle = null; }
         if (_adClosedHandle) { try { _adClosedHandle.remove(); } catch(_){} _adClosedHandle = null; }
 
-        await AdMob.prepareRewardInterstitialAd({ adId: ADMOB_REWARDED_INTER_ID });
+        await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED_ID });
 
+        // Rewarded Video — المكافأة عبر listener وليس return value
+        let rewardEarned = false;
         const safetyTimer = setTimeout(function() { _adRewardInProg = false; }, 120000);
 
-        // showRewardInterstitialAd يُحل عند كسب المكافأة فعلاً (من الوثائق الرسمية)
-        const result = await AdMob.showRewardInterstitialAd();
-        clearTimeout(safetyTimer);
-        if (result && result.type) {
-            setAICredits(getAICredits() + AD_CREDITS_PER_AD);
-            showNotif(`🎉 حصلت على ${AD_CREDITS_PER_AD} طلبات ذكاء اصطناعي!`, 'success');
-        } else {
-            showNotif('⚠️ يجب مشاهدة الإعلان كاملًا للحصول على الطلبات.', 'error');
-        }
-        _adRewardInProg = false;
+        const rewardHandle = AdMob.addListener('onRewardedVideoAdReward', function() {
+            rewardEarned = true;
+        });
+        const closedHandle = AdMob.addListener('onRewardedVideoAdClosed', function() {
+            clearTimeout(safetyTimer);
+            try { rewardHandle.remove(); } catch(_) {}
+            try { closedHandle.remove(); } catch(_) {}
+            if (rewardEarned) {
+                setAICredits(getAICredits() + AD_CREDITS_PER_AD);
+                showNotif(`🎉 حصلت على ${AD_CREDITS_PER_AD} طلبات ذكاء اصطناعي!`, 'success');
+            } else {
+                showNotif('⚠️ يجب مشاهدة الإعلان كاملًا للحصول على الطلبات.', 'error');
+            }
+            _adRewardInProg = false;
+            if (overlay) overlay.classList.remove('visible');
+            if (btn)     btn.disabled = false;
+        });
+
+        await AdMob.showRewardVideoAd();
+        // النتيجة تصل عبر الـ listeners أعلاه — لا نُكمل هنا
+        return;
 
     } catch(e) {
         showNotif('⚠️ تعذر تحميل الإعلان. تحقق من الإنترنت وحاول مجددًا.', 'error');
