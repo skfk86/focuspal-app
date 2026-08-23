@@ -5285,8 +5285,8 @@ async function showRewardedAd() {
         // Use the native bridge — same pattern as initAdMob (no dynamic import)
         const AdMob = window.Capacitor?.Plugins?.AdMob;
         if (!AdMob) throw new Error('AdMob bridge not registered');
-        await AdMob.prepareRewardedInterstitialAd({ adId: ADMOB_REWARDED_INTER_ID });
-        const result = await AdMob.showRewardedInterstitialAd();
+        await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED_INTER_ID });
+        const result = await AdMob.showRewardVideoAd();
         if (result && result.type === 'rewarded') {
             setAICredits(getAICredits() + AD_CREDITS_PER_AD);
             showNotif(`🎉 حصلت على ${AD_CREDITS_PER_AD} طلبات ذكاء اصطناعي!`, 'success');
@@ -5294,7 +5294,7 @@ async function showRewardedAd() {
             showNotif('⚠️ يجب مشاهدة الإعلان كاملًا للحصول على الطلبات.', 'error');
         }
     } catch (e) {
-        showNotif('ERR: ' + (e?.message || e?.code || JSON.stringify(e)), 'error');
+        showNotif('⚠️ تعذر تحميل الإعلان. تحقق من الإنترنت وحاول مجددًا.', 'error');
     } finally {
         if (overlay) overlay.classList.remove('visible');
         if (btn) btn.disabled = false;
