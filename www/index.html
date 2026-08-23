@@ -5269,30 +5269,19 @@ async function showRewardedAd() {
 
         await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED_ID });
 
-        // Rewarded Video — المكافأة عبر listener وليس return value
-        let rewardEarned = false;
-        const safetyTimer = setTimeout(function() { _adRewardInProg = false; }, 120000);
-
-        const rewardHandle = AdMob.addListener('onRewardedVideoAdReward', function() {
-            rewardEarned = true;
+        // المكافأة تُعطى مباشرةً في onRewardedVideoAdReward
+        AdMob.addListener('onRewardedVideoAdReward', function() {
+            setAICredits(getAICredits() + AD_CREDITS_PER_AD);
+            showNotif(`🎉 حصلت على ${AD_CREDITS_PER_AD} طلبات ذكاء اصطناعي!`, 'success');
         });
-        const closedHandle = AdMob.addListener('onRewardedVideoAdClosed', function() {
-            clearTimeout(safetyTimer);
-            try { rewardHandle.remove(); } catch(_) {}
-            try { closedHandle.remove(); } catch(_) {}
-            if (rewardEarned) {
-                setAICredits(getAICredits() + AD_CREDITS_PER_AD);
-                showNotif(`🎉 حصلت على ${AD_CREDITS_PER_AD} طلبات ذكاء اصطناعي!`, 'success');
-            } else {
-                showNotif('⚠️ يجب مشاهدة الإعلان كاملًا للحصول على الطلبات.', 'error');
-            }
+
+        AdMob.addListener('onRewardedVideoAdClosed', function() {
             _adRewardInProg = false;
             if (overlay) overlay.classList.remove('visible');
             if (btn)     btn.disabled = false;
         });
 
         await AdMob.showRewardVideoAd();
-        // النتيجة تصل عبر الـ listeners أعلاه — لا نُكمل هنا
         return;
 
     } catch(e) {
