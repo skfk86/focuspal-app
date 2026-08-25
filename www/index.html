@@ -5143,11 +5143,9 @@ const INTERSTITIAL_MAX_DAY = 5;   // أقصى عدد إعلانات بينية �
 
 // --- AdMob Unit IDs (استبدل بمعرفاتك الحقيقية من Google AdMob) ---
 const ADMOB_APP_ID          = 'ca-app-pub-7608701150166997~5972531267';
-// const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-7608701150166997/5054867158'; // الإنتاج — فعّله بعد 48 ساعة
-const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-3940256099942544/1033173712'; // TEST مؤقت
-const ADMOB_REWARDED_INTER_ID = 'ca-app-pub-7608701150166997/4979454344'; // احتياط
-// const ADMOB_REWARDED_ID = 'ca-app-pub-7608701150166997/3297108529'; // الإنتاج — فعّله بعد 48 ساعة
-const ADMOB_REWARDED_ID = 'ca-app-pub-3940256099942544/5224354917'; // TEST مؤقت
+const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-7608701150166997/5054867158';
+const ADMOB_REWARDED_INTER_ID = 'ca-app-pub-7608701150166997/4979454344';
+const ADMOB_REWARDED_ID = 'ca-app-pub-7608701150166997/3297108529';
 
 // Test IDs (uncomment during development):
 // const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-3940256099942544/1033173712';
@@ -5192,7 +5190,7 @@ async function initAdMob() {
         const AdMob = window.Capacitor?.Plugins?.AdMob;
         if (!AdMob) return;
 
-        await AdMob.initialize({ requestTrackingAuthorization: false, initializeForTesting: true }); // TEST مؤقت
+        await AdMob.initialize({ requestTrackingAuthorization: false, initializeForTesting: false });
         admobReady = true;
 
         AdMob.addListener('onInterstitialAdClosed', function() {
