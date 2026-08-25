@@ -3743,6 +3743,9 @@ function completeSession() {
 
     updateBadges();
     updateQuickHints();
+
+    // إعلان بيني بعد انتهاء الجلسة — أفضل لحظة طبيعية
+    setTimeout(_showInterstitialIfAllowed, 2000);
 }
 
 function updateTimerDisplay() {
@@ -4775,6 +4778,12 @@ function toggleTask(id) {
         localStorage.setItem('fp_tasks', JSON.stringify(tasks));
         if (t.completed) cancelTaskNotification(t); else scheduleTaskNotification(t);
         renderTasks(); updateBadges(); showNotif(t.completed ? '✅ إنجاز!' : '🔄 إلغاء');
+
+        // إعلان بيني كل 3 مهام مكتملة
+        if (t.completed) {
+            const doneCount = tasks.filter(x => x.completed).length;
+            if (doneCount % 3 === 0) setTimeout(_showInterstitialIfAllowed, 1500);
+        }
     }
 }
 
@@ -5139,7 +5148,7 @@ let chatLoading = false;
 // Interstitial shown up to 2× per day.
 
 const AD_CREDITS_PER_AD    = 3;   // طلبات تُمنح عند مشاهدة إعلان بمكافأة
-const INTERSTITIAL_MAX_DAY = 5;   // أقصى عدد إعلانات بينية يوميًا
+const INTERSTITIAL_MAX_DAY = 3;   // أقصى عدد إعلانات بينية يوميًا
 
 // --- AdMob Unit IDs (استبدل بمعرفاتك الحقيقية من Google AdMob) ---
 const ADMOB_APP_ID          = 'ca-app-pub-7608701150166997~5972531267';
@@ -5168,18 +5177,32 @@ function _loadInterstitial() {
         .catch(function() { _intrLoading = false; setTimeout(_loadInterstitial, 30000); });
 }
 
-function _showInterstitialIfAllowed() {
+const INTERSTITIAL_MIN_GAP   = 300;  // 5 دقائق بين كل إعلانين (بالثواني)
+let   _lastIntrTime          = 0;    // وقت آخر إعلان بيني عُرض
+
+function _canShowInterstitial() {
     const AdMob = window.Capacitor?.Plugins?.AdMob;
-    if (!AdMob || !admobReady || !_intrReady) return;
-    const todayKey   = getTodayKey();
-    const iData      = JSON.parse(localStorage.getItem('fp_interstitial') || '{}');
-    const todayCount = (iData.date === todayKey) ? (iData.count || 0) : 0;
-    if (todayCount >= INTERSTITIAL_MAX_DAY) return;
+    if (!AdMob || !admobReady || !_intrReady) return false;
+    const now      = Math.floor(Date.now() / 1000);
+    if (now - _lastIntrTime < INTERSTITIAL_MIN_GAP) return false;
+    const todayKey = getTodayKey();
+    const iData    = JSON.parse(localStorage.getItem('fp_interstitial') || '{}');
+    const count    = (iData.date === todayKey) ? (iData.count || 0) : 0;
+    return count < INTERSTITIAL_MAX_DAY;
+}
+
+function _showInterstitialIfAllowed() {
+    if (!_canShowInterstitial()) return;
+    const todayKey = getTodayKey();
+    const iData    = JSON.parse(localStorage.getItem('fp_interstitial') || '{}');
+    const count    = (iData.date === todayKey) ? (iData.count || 0) : 0;
     _intrReady = false;
+    _lastIntrTime = Math.floor(Date.now() / 1000);
+    const AdMob = window.Capacitor?.Plugins?.AdMob;
     AdMob.showInterstitial()
         .then(function() {
             localStorage.setItem('fp_interstitial',
-                JSON.stringify({ date: todayKey, count: todayCount + 1 }));
+                JSON.stringify({ date: todayKey, count: count + 1 }));
         })
         .catch(function() { setTimeout(_loadInterstitial, 2000); });
 }
