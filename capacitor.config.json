@@ -27,8 +27,7 @@
       "backgroundColor": "#0a0b0f"
     },
     "AdMob": {
-      "appId": "ca-app-pub-7608701150166997~5972531267",
-      "initializeForTesting": false
+      "appId": "ca-app-pub-7608701150166997~5972531267"
     }
   }
 }
