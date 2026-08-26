@@ -5147,213 +5147,161 @@ let chatLoading = false;
 // Watch rewarded interstitial ad → earn 3 credits. No auto-reset.
 // Interstitial shown up to 2× per day.
 
-const AD_CREDITS_PER_AD    = 3;   // طلبات تُمنح عند مشاهدة إعلان بمكافأة
-const INTERSTITIAL_MAX_DAY = 3;   // أقصى عدد إعلانات بينية يوميًا
+var AD_CREDITS_PER_AD    = 3;
+var INTERSTITIAL_MAX_DAY = 3;
+var REWARDED_MAX_DAY     = 5;
+var ADMOB_INTERSTITIAL_ID = 'ca-app-pub-7608701150166997/8045730680';
+var ADMOB_REWARDED_ID     = 'ca-app-pub-7608701150166997/9276263329';
+var _lastIntrTime         = 0;
+var MIN_INTERSTITIAL_INTERVAL = 2 * 60 * 1000;
 
-// --- AdMob Unit IDs (استبدل بمعرفاتك الحقيقية من Google AdMob) ---
-const ADMOB_APP_ID          = 'ca-app-pub-7608701150166997~5972531267';
-const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-7608701150166997/8045730680';
-const ADMOB_REWARDED_INTER_ID = 'ca-app-pub-7608701150166997/9276263329';
-const ADMOB_REWARDED_ID = 'ca-app-pub-7608701150166997/9276263329';
-
-// Test IDs (uncomment during development):
-// const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-3940256099942544/1033173712';
-// const ADMOB_REWARDED_INTER_ID = 'ca-app-pub-3940256099942544/5224354917'; // rewarded interstitial test ID
-
-let admobReady       = false;
-let _intrReady       = false;
-let _intrLoading     = false;
-let _adRewardInProg  = false;
-let _adRewardHandle  = null;
-let _adClosedHandle  = null;
-
-function _loadInterstitial() {
-    const AdMob = window.Capacitor?.Plugins?.AdMob;
-    if (!AdMob || _intrLoading) return;
-    _intrLoading = true;
-    _intrReady   = false;
-    AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL_ID })
-        .then(function() { _intrReady = true; _intrLoading = false; setTimeout(_showInterstitialIfAllowed, 500); })
-        .catch(function() { _intrLoading = false; setTimeout(_loadInterstitial, 30000); });
-}
-
-const INTERSTITIAL_MIN_GAP   = 300;  // 5 دقائق بين كل إعلانين (بالثواني)
-let   _lastIntrTime          = 0;    // وقت آخر إعلان بيني عُرض
-
-function _canShowInterstitial() {
-    const AdMob = window.Capacitor?.Plugins?.AdMob;
-    if (!AdMob || !admobReady || !_intrReady) return false;
-    const now      = Math.floor(Date.now() / 1000);
-    if (now - _lastIntrTime < INTERSTITIAL_MIN_GAP) return false;
-    const todayKey = getTodayKey();
-    const iData    = JSON.parse(localStorage.getItem('fp_interstitial') || '{}');
-    const count    = (iData.date === todayKey) ? (iData.count || 0) : 0;
-    return count < INTERSTITIAL_MAX_DAY;
-}
-
-function _showInterstitialIfAllowed() {
-    if (!_canShowInterstitial()) return;
-    const todayKey = getTodayKey();
-    const iData    = JSON.parse(localStorage.getItem('fp_interstitial') || '{}');
-    const count    = (iData.date === todayKey) ? (iData.count || 0) : 0;
-    _intrReady = false;
-    _lastIntrTime = Math.floor(Date.now() / 1000);
-    const AdMob = window.Capacitor?.Plugins?.AdMob;
-    AdMob.showInterstitial()
-        .then(function() {
-            localStorage.setItem('fp_interstitial',
-                JSON.stringify({ date: todayKey, count: count + 1 }));
-        })
-        .catch(function() { setTimeout(_loadInterstitial, 2000); });
-}
-
-async function initAdMob() {
-    try {
-        if (!isNativeApp()) return;
-        const AdMob = window.Capacitor?.Plugins?.AdMob;
-        if (!AdMob) return;
-
-        await AdMob.initialize({ requestTrackingAuthorization: false, initializeForTesting: false });
-        admobReady = true;
-
-        AdMob.addListener('onInterstitialAdClosed', function() {
-            _intrReady = false;
-            setTimeout(_loadInterstitial, 1000);
-        });
-
-        _loadInterstitial();
-
-    } catch(e) {
-        admobReady = true;
-        console.warn('AdMob init:', e.message);
-    }
-}
-
-function getTodayKey() {
-    const d = new Date();
-    return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-}
-
-function getActiveKey() {
-    return DEFAULT_GROQ_KEY;
-}
-
-// --- AI Credits ---
 function getAICredits() {
     return parseInt(localStorage.getItem('fp_ai_credits') || '0', 10);
 }
-
 function setAICredits(n) {
     localStorage.setItem('fp_ai_credits', String(Math.max(0, n)));
     updateChatUsageUI();
 }
-
-function getChatRemaining() {
-    return getAICredits();
-}
-
-function incrementChatUsage() {
-    setAICredits(getAICredits() - 1);
-}
-
-const REWARDED_MAX_DAY = 5; // أقصى إعلانات مكافأة يومياً
-
 function getRewardedAdsToday() {
-    const data = JSON.parse(localStorage.getItem('fp_rewarded_today') || '{}');
-    const today = getTodayKey();
-    return data.date === today ? (data.count || 0) : 0;
+    try { var d=JSON.parse(localStorage.getItem('fp_rewarded_today')||'{}'); return d.date===getTodayKey()?(d.count||0):0; } catch(_){ return 0; }
 }
-
 function incRewardedAdsToday() {
-    const today = getTodayKey();
-    const count = getRewardedAdsToday() + 1;
-    localStorage.setItem('fp_rewarded_today', JSON.stringify({ date: today, count }));
+    var count=getRewardedAdsToday()+1;
+    localStorage.setItem('fp_rewarded_today', JSON.stringify({date:getTodayKey(),count:count}));
 }
-
+function canShowInterstitial() {
+    if (Date.now()-_lastIntrTime < MIN_INTERSTITIAL_INTERVAL) return false;
+    try { var d=JSON.parse(localStorage.getItem('fp_interstitial')||'{}'); var today=getTodayKey(); var count=(d.date===today)?(d.count||0):0; return count<INTERSTITIAL_MAX_DAY; } catch(_){ return true; }
+}
 function updateChatUsageUI() {
-    const text        = document.getElementById('chatUsageText');
-    const settingLabel = document.getElementById('aiKeySettingLabel');
-    const btn         = document.getElementById('watchAdBtnTop');
-    const credits     = getAICredits();
-    const adsToday    = getRewardedAdsToday();
-    const adsLeft     = REWARDED_MAX_DAY - adsToday;
-
-    if (text) text.textContent = String(credits);
-
+    var text=document.getElementById('chatUsageText');
+    var btn=document.getElementById('watchAdBtnTop');
+    var settingLabel=document.getElementById('aiKeySettingLabel');
+    var adsLeft=REWARDED_MAX_DAY-getRewardedAdsToday();
+    if (text) text.textContent=String(getAICredits());
     if (btn) {
-        if (adsLeft <= 0) {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-ban"></i> وصلت الحد اليومي (5/5)';
-        } else {
-            btn.disabled = false;
-            btn.innerHTML = `<i class="fas fa-play-circle"></i> شاهد إعلانًا (+${AD_CREDITS_PER_AD}) — تبقى ${adsLeft} اليوم`;
-        }
+        if (adsLeft<=0) { btn.disabled=true; btn.innerHTML='<i class="fas fa-ban"></i> وصلت الحد اليومي (5/5)'; }
+        else { btn.disabled=false; btn.innerHTML='<i class="fas fa-play-circle"></i> شاهد إعلانًا (+'+AD_CREDITS_PER_AD+') — تبقى '+adsLeft+' اليوم'; }
     }
-
     if (settingLabel) {
-        settingLabel.textContent = adsLeft > 0
-            ? `شاهد إعلانًا للحصول على ${AD_CREDITS_PER_AD} طلبات — تبقى ${adsLeft} من ${REWARDED_MAX_DAY} اليوم`
-            : `وصلت الحد اليومي (${REWARDED_MAX_DAY} إعلانات) — عد غداً`;
+        settingLabel.textContent = adsLeft>0
+            ? 'شاهد إعلانًا للحصول على '+AD_CREDITS_PER_AD+' طلبات — تبقى '+adsLeft+' من '+REWARDED_MAX_DAY+' اليوم'
+            : 'وصلت الحد اليومي ('+REWARDED_MAX_DAY+' إعلانات) — عد غداً';
     }
 }
 
-async function showRewardedAd() {
-    const btn     = document.getElementById('watchAdBtnTop');
-    const overlay = document.getElementById('adLoadingOverlay');
+// ─── AdMob Core ───
+(function(){
+    var Cap   = window.Capacitor;
+    var AdMob = Cap && Cap.Plugins && Cap.Plugins.AdMob;
 
-    // تحقق من الحد اليومي
-    if (getRewardedAdsToday() >= REWARDED_MAX_DAY) {
-        showNotif(`⚠️ وصلت الحد اليومي (${REWARDED_MAX_DAY} إعلانات). عد غداً!`, 'error');
+    if (!AdMob) {
+        window._admobReady=false;
+        window._showInterstitialNative=function(){};
+        window._watchRewardedAdNative=null;
         return;
     }
 
-    if (_adRewardInProg) return;
-    _adRewardInProg = true;
-    if (btn)     btn.disabled = true;
-    if (overlay) overlay.classList.add('visible');
+    var _admobReady=false, _intrShowing=false, _intrReady=false;
+
+    AdMob.initialize({
+        requestTrackingAuthorization: false,
+        initializeForTesting: false
+    }).then(function(){
+        _admobReady=true; window._admobReady=true;
+        _loadInterstitial();
+    }).catch(function(e){
+        _admobReady=true; window._admobReady=true;
+        console.warn('[AdMob] init catch:',e&&e.message);
+        _loadInterstitial();
+    });
+
+    function _loadInterstitial() {
+        if (!_admobReady) return;
+        _intrReady=false;
+        AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL_ID })
+            .then(function(){ _intrReady=true; })
+            .catch(function(){ setTimeout(_loadInterstitial,30000); });
+    }
 
     try {
-        if (!admobReady) {
-            showNotif('⚠️ الإعلانات متاحة فقط في تطبيق Android.', 'error');
+        AdMob.addListener('onInterstitialAdClosed', function(){
+            _intrShowing=false; _intrReady=false;
+            _lastIntrTime=Date.now();
+            try { var d=JSON.parse(localStorage.getItem('fp_interstitial')||'{}'); var today=getTodayKey(); var count=(d.date===today)?(d.count||0):0; localStorage.setItem('fp_interstitial',JSON.stringify({date:today,count:count+1})); } catch(_){}
+            setTimeout(_loadInterstitial,1000);
+        });
+    } catch(_){}
+
+    window._showInterstitialNative = function() {
+        if (!canShowInterstitial()||_intrShowing||!_admobReady||!_intrReady) {
+            if (!_intrReady&&_admobReady) _loadInterstitial();
             return;
         }
-        const AdMob = window.Capacitor?.Plugins?.AdMob;
-        if (!AdMob) throw new Error('AdMob bridge not registered');
+        _intrShowing=true;
+        AdMob.showInterstitial()
+            .then(function(){})
+            .catch(function(){ _intrShowing=false; _intrReady=false; setTimeout(_loadInterstitial,3000); });
+    };
 
-        if (_adRewardHandle) { try { _adRewardHandle.remove(); } catch(_){} _adRewardHandle = null; }
-        if (_adClosedHandle) { try { _adClosedHandle.remove(); } catch(_){} _adClosedHandle = null; }
+    window._watchRewardedAdNative = async function() {
+        if (window._adRewardInProgress) return;
+        if (getRewardedAdsToday()>=REWARDED_MAX_DAY) {
+            showNotif('⚠️ وصلت الحد اليومي. عد غداً!','error');
+            return;
+        }
+        if (!_admobReady) { showNotif('⏳ جاري تهيئة الإعلانات، حاول ثانيةً...','error'); return; }
 
-        await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED_ID });
+        window._adRewardInProgress=true;
+        var btn=document.getElementById('watchAdBtnTop');
+        if (btn) { btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> جاري التحميل...'; }
 
-        AdMob.addListener('onRewardedVideoAdReward', function() {
-            incRewardedAdsToday();
-            setAICredits(getAICredits() + AD_CREDITS_PER_AD);
-            showNotif(`🎉 حصلت على ${AD_CREDITS_PER_AD} طلبات! تبقى ${REWARDED_MAX_DAY - getRewardedAdsToday()} إعلانات اليوم.`, 'success');
+        if (window._adRewardHandle) { try { window._adRewardHandle.remove(); } catch(_){} }
+        if (window._adClosedHandle) { try { window._adClosedHandle.remove(); } catch(_){} }
+        window._adRewardHandle=null; window._adClosedHandle=null;
+
+        try {
+            await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED_ID });
+
+            var _rewardHandle=await AdMob.addListener('onRewardedVideoAdReward', function(){
+                if (window._adClosedHandle) { try { window._adClosedHandle.remove(); } catch(_){} window._adClosedHandle=null; }
+                incRewardedAdsToday();
+                setAICredits(getAICredits()+AD_CREDITS_PER_AD);
+                showNotif('🎉 حصلت على '+AD_CREDITS_PER_AD+' طلبات! تبقى '+(REWARDED_MAX_DAY-getRewardedAdsToday())+' إعلانات اليوم.','success');
+                window._adRewardInProgress=false;
+                updateChatUsageUI();
+            });
+
+            var _closedHandle=await AdMob.addListener('onRewardedVideoAdClosed', function(){
+                setTimeout(function(){ window._adRewardInProgress=false; updateChatUsageUI(); },300);
+            });
+
+            window._adRewardHandle=_rewardHandle;
+            window._adClosedHandle=_closedHandle;
+
+            await AdMob.showRewardVideoAd();
+
+        } catch(e) {
+            window._adRewardInProgress=false;
             updateChatUsageUI();
-        });
+            var msg=(e&&e.message)?e.message.toLowerCase():'';
+            if (msg.includes('fill')||msg.includes('no ad')||msg.includes('load')) {
+                showNotif('📭 لا يوجد إعلان الآن — حاول لاحقاً','error');
+            } else {
+                showNotif('⚠️ '+(e&&e.message||'خطأ في الإعلان'),'error');
+            }
+        }
+    };
+})();
 
-        AdMob.addListener('onRewardedVideoAdClosed', function() {
-            _adRewardInProg = false;
-            if (overlay) overlay.classList.remove('visible');
-            updateChatUsageUI();
-        });
-
-        await AdMob.showRewardVideoAd();
-        return;
-
-    } catch(e) {
-        showNotif(`⚠️ خطأ: ${e?.message || JSON.stringify(e)}`, 'error');
-        _adRewardInProg = false;
-    } finally {
-        if (overlay) overlay.classList.remove('visible');
-        if (btn && getRewardedAdsToday() < REWARDED_MAX_DAY) btn.disabled = false;
-    }
+function showRewardedAd() {
+    if (window._watchRewardedAdNative) window._watchRewardedAdNative();
 }
+function showInterstitialAd() {
+    if (window._showInterstitialNative) window._showInterstitialNative();
+}
+function initAdMob() {}
 
-
-
-// ===== Subscription system removed — replaced by AdMob rewarded ads =====
-// (see showRewardedAd / initAdMob above — uses Rewarded Interstitial, not Rewarded Video)
 
 function initEnterKeys() {
     const taskInput = document.getElementById('taskInput');
