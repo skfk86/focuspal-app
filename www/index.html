@@ -3485,7 +3485,8 @@ document.addEventListener('DOMContentLoaded', () => {
         splash.classList.add('splash-hide');
         setTimeout(() => {
             splash.remove();
-            initAdMob(); // بعد الـ splash — Activity مستقرة تماماً
+            initAdMob();
+            setTimeout(showInterstitialAd, 3000); // إعلان بيني عند فتح التطبيق
         }, 650);
     }, 1900);
 });
@@ -3744,8 +3745,8 @@ function completeSession() {
     updateBadges();
     updateQuickHints();
 
-    // إعلان بيني بعد انتهاء الجلسة — أفضل لحظة طبيعية
-    setTimeout(_showInterstitialIfAllowed, 2000);
+    // إعلان بيني بعد انتهاء الجلسة
+    setTimeout(showInterstitialAd, 2000);
 }
 
 function updateTimerDisplay() {
@@ -4779,10 +4780,9 @@ function toggleTask(id) {
         if (t.completed) cancelTaskNotification(t); else scheduleTaskNotification(t);
         renderTasks(); updateBadges(); showNotif(t.completed ? '✅ إنجاز!' : '🔄 إلغاء');
 
-        // إعلان بيني كل 3 مهام مكتملة
+        // إعلان بيني عند إتمام كل مهمة
         if (t.completed) {
-            const doneCount = tasks.filter(x => x.completed).length;
-            if (doneCount % 3 === 0) setTimeout(_showInterstitialIfAllowed, 1500);
+            setTimeout(showInterstitialAd, 1500);
         }
     }
 }
@@ -5263,7 +5263,13 @@ function updateChatUsageUI() {
         try {
             await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED_ID });
 
+            var _safetyTimer = setTimeout(function(){
+                window._adRewardInProgress=false;
+                updateChatUsageUI();
+            }, 2*60*1000);
+
             var _rewardHandle=await AdMob.addListener('onRewardedVideoAdReward', function(){
+                clearTimeout(_safetyTimer);
                 if (window._adClosedHandle) { try { window._adClosedHandle.remove(); } catch(_){} window._adClosedHandle=null; }
                 incRewardedAdsToday();
                 setAICredits(getAICredits()+AD_CREDITS_PER_AD);
@@ -5273,6 +5279,7 @@ function updateChatUsageUI() {
             });
 
             var _closedHandle=await AdMob.addListener('onRewardedVideoAdClosed', function(){
+                clearTimeout(_safetyTimer);
                 setTimeout(function(){ window._adRewardInProgress=false; updateChatUsageUI(); },300);
             });
 
