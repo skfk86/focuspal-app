@@ -5155,8 +5155,8 @@ function getTodayKey() {
     var d = new Date();
     return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
 }
-var ADMOB_INTERSTITIAL_ID = 'ca-app-pub-7608701150166997/8045730680';
-var ADMOB_REWARDED_ID     = 'ca-app-pub-7608701150166997/9276263329';
+var ADMOB_INTERSTITIAL_ID = 'ca-app-pub-3940256099942544/1033173712'; // TEST
+var ADMOB_REWARDED_ID     = 'ca-app-pub-3940256099942544/5224354917'; // TEST
 var _lastIntrTime         = 0;
 var MIN_INTERSTITIAL_INTERVAL = 2 * 60 * 1000;
 
@@ -5211,7 +5211,7 @@ function updateChatUsageUI() {
 
     AdMob.initialize({
         requestTrackingAuthorization: false,
-        initializeForTesting: false
+        initializeForTesting: true
     }).then(function(){
         _admobReady=true; window._admobReady=true;
         _loadInterstitial();
