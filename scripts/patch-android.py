@@ -133,7 +133,7 @@ def patch_gradle_wrapper():
     original = content
     content = re.sub(
         r'gradle-[0-9.]+-all\.zip',
-        'gradle-8.7-all.zip',
+        'gradle-8.11.1-all.zip',
         content
     )
 
