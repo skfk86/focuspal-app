@@ -5150,6 +5150,11 @@ let chatLoading = false;
 var AD_CREDITS_PER_AD    = 3;
 var INTERSTITIAL_MAX_DAY = 3;
 var REWARDED_MAX_DAY     = 5;
+
+function getTodayKey() {
+    var d = new Date();
+    return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+}
 var ADMOB_INTERSTITIAL_ID = 'ca-app-pub-7608701150166997/8045730680';
 var ADMOB_REWARDED_ID     = 'ca-app-pub-7608701150166997/9276263329';
 var _lastIntrTime         = 0;
@@ -5261,13 +5266,7 @@ function updateChatUsageUI() {
         window._adRewardHandle=null; window._adClosedHandle=null;
 
         try {
-            await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED_ID });
-
-            var _safetyTimer = setTimeout(function(){
-                window._adRewardInProgress=false;
-                updateChatUsageUI();
-            }, 2*60*1000);
-
+            // ✅ addListener قبل prepare (من دليل المشاكل)
             var _rewardHandle=await AdMob.addListener('onRewardedVideoAdReward', function(){
                 clearTimeout(_safetyTimer);
                 if (window._adClosedHandle) { try { window._adClosedHandle.remove(); } catch(_){} window._adClosedHandle=null; }
@@ -5285,6 +5284,13 @@ function updateChatUsageUI() {
 
             window._adRewardHandle=_rewardHandle;
             window._adClosedHandle=_closedHandle;
+
+            await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED_ID });
+
+            var _safetyTimer = setTimeout(function(){
+                window._adRewardInProgress=false;
+                updateChatUsageUI();
+            }, 2*60*1000);
 
             await AdMob.showRewardVideoAd();
 
