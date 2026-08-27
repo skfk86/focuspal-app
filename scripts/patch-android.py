@@ -97,10 +97,10 @@ def patch_root_gradle():
 
     original = content
 
-    # ترقية AGP إلى 8.5.0
+    # ترقية AGP إلى 8.9.1
     content = re.sub(
         r'com\.android\.tools\.build:gradle:[0-9.]+',
-        'com.android.tools.build:gradle:8.5.0',
+        'com.android.tools.build:gradle:8.9.1',
         content
     )
 
